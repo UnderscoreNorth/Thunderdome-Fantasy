@@ -1,0 +1,83 @@
+<html lang='en'>
+<head>
+	<meta charset='utf-8'>
+	<title></title>
+	<link rel="shortcut icon" href="">
+	<link rel="stylesheet" href="main.css">
+	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	<script src="char.js"></script>
+	<script src="main.js"></script>
+</head>
+<body>
+	<div id='side'>
+		<button onClick="auto()">Auto</button>
+		<button onClick="turn()">Next Hour</button>
+		<p id='day'></p>
+		<div id='table'>
+		</div>
+	</div>
+	<div id='map'>
+	</div>
+</body>
+<style>
+html,body{
+	font-family:helvetica;
+	width:100%;
+	height:100%;
+	margin:0;
+}
+#side{
+	display:inline-block;
+	vertical-align:top;
+	height:100%;
+}
+#table .container{
+	display:inline-block;
+	vertical-align:top;
+	width:200px;
+}
+#table .container table, #table .container img{
+	display:inline-block;
+	vertical-align:top;
+}
+#table .container table{
+	width:100px;
+}
+#table .container img{
+	width:50px;
+	height:50px;
+	object-fit:cover;
+}
+#map{
+	display:inline-block;
+	vertical-align:top;
+	height:90%;
+	margin:5%;
+	background:green;
+	position:relative;
+border-radius: 50%;
+}
+.char{
+	width:24px;
+	height:24px;
+	border:solid 1px black;
+	position:absolute;
+	border-radius:12px;
+	display:flex;
+	justify-content:center;
+	object-fit:cover;
+	background-size:cover;
+}
+.dead{
+	opacity:0.25;
+}
+td,th{
+	text-align:left;
+	font-size:11px;
+	margin:0;
+}
+.fighting{
+	border-color:red;
+}
+</style>
+
