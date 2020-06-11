@@ -1,12 +1,12 @@
-var chars = [];
+var players = [];
 var interval = 1000;
 var initDone = false;
 var playing = false;
 var day = 0;
 var hour = 0;
 var iconSize = 24;
-var sightRange = 200;
-var fightRange = 24;
+var moralNum = {"Chaotic":0,"Neutral":0,"Lawful":0};
+var personalityNum = {"Evil":0,"Neutral":0,"Good":0};
 
 var charlist = [
 	["Saki","https://cdn.myanimelist.net/images/characters/7/75506.jpg"],
@@ -63,7 +63,7 @@ $( document ).ready(function(){
 	$(window).resize(function(){
 		$('#map').width($('#map').height());
 		$('#side').width($('body').width() - ($('#map').width() + 200));
-		chars.forEach(function(chara,index){
+		players.forEach(function(chara,index){
 			chara.draw();
 		});
 	});
@@ -85,7 +85,7 @@ function Init(){
 			tempChar = new Char("char" + i,"",x,y);
 		}
 		tempChar.draw();
-		chars.push(tempChar);
+		players.push(tempChar);
 	}
 	initDone = true;
 	setInterval(timer,interval);
@@ -100,25 +100,25 @@ function auto(){
 }
 function turn(){
 	let numReady = 0;
-	chars.forEach(function(chara,index){
+	players.forEach(function(chara,index){
 		if(chara.finishedAction)
 			numReady++;
 	});
-	if(numReady == chars.length){
-		chars.sort(() => Math.random() - 0.5);
-		chars.forEach(chara => chara.plannedAction = "");
-		chars.forEach(chara => chara.finishedAction = false);
-		chars.forEach(chara => chara.planAction());
+	if(numReady == players.length){
+		players.sort(() => Math.random() - 0.5);
+		players.forEach(chara => chara.plannedAction = "");
+		players.forEach(chara => chara.finishedAction = false);
+		players.forEach(chara => chara.planAction());
 	}
 }
 function action(){
 	let numReady = 0;
-	chars.forEach(function(chara,index){
+	players.forEach(function(chara,index){
 		if(chara.plannedAction)
 			numReady++;
 	});
-	if(numReady == chars.length){
-		chars.forEach(chara => chara.doAction());
+	if(numReady == players.length){
+		players.forEach(chara => chara.doAction());
 		hour++;
 		if(hour == 24){
 			hour = 0;
@@ -141,13 +141,37 @@ function boundsCheck(x,y){
 	}
 }
 function updateTable(){
-	chars.forEach(function(chara,index){
-		$("#tbl_" + chara.id + " .tbl_energy").text(chara.energy);
-		$("#tbl_" + chara.id + " .tbl_health").text(chara.health);
+	players.forEach(function(chara,index){
+		$("#tbl_" + chara.id + " .energyBar").css("width",(chara.energy/100)*100 + "%");
+		$("#tbl_" + chara.id + " .healthBar").css("width",(chara.health/100)*100 + "%");
+		$("#char_" + chara.id + " .healthBar").css("width",(chara.health/100)*100 + "%");
 		$("#tbl_" + chara.id + " .tbl_status").text(chara.lastAction);
 		$("#tbl_" + chara.id + " .tbl_kills").text(chara.kills);
+		if(chara.weapon){
+			$("#tbl_" + chara.id + " .weapon").text(chara.weapon.name);
+		}
 	});
+	$('#nums').text('Moral: C ' + moralNum.Chaotic + " N " + moralNum.Neutral + " L " + moralNum.Lawful + " Personality: G " + personalityNum.Good + " N " + personalityNum.Neutral + " E " + personalityNum.Evil);
 }
 function arrayRemove(arr, value) { 
 	return arr.filter(function(ele){ return ele != value; });
+}
+function hypD(x,y,hyp=true){
+	if (hyp){
+		return Math.sqrt(Math.pow(x,2)+Math.pow(y,2));
+	} else {
+		return Math.sqrt(Math.pow(x,2)-Math.pow(y,2));
+	}
+}
+function roll(options){
+	let tempArr = [];
+	//console.log(options);
+	options.forEach(function(choice,index){
+		for(let i =0;i<choice[1];i++){
+			tempArr.push(choice[0]);
+		}
+	});
+	//console.log(tempArr);
+	tempArr.sort(() => Math.random() - 0.5);
+	return tempArr[0];
 }

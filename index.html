@@ -6,13 +6,15 @@
 	<link rel="stylesheet" href="main.css">
 	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
 	<script src="char.js"></script>
+	<script src="action.js"></script>
+	<script src="item.js"></script>
 	<script src="main.js"></script>
 </head>
 <body>
 	<div id='side'>
 		<button onClick="auto()">Auto</button>
 		<button onClick="turn()">Next Hour</button>
-		<p id='day'></p>
+		<span id='day'></span><span style='margin-left:10px' id='nums'></span>
 		<div id='table'>
 		</div>
 	</div>
@@ -35,6 +37,9 @@ html,body{
 	display:inline-block;
 	vertical-align:top;
 	width:200px;
+	position:relative;
+	height:50px;
+	margin-bottom:5px;
 }
 #table .container table, #table .container img{
 	display:inline-block;
@@ -55,7 +60,7 @@ html,body{
 	margin:5%;
 	background:green;
 	position:relative;
-border-radius: 50%;
+	border-radius: 50%;
 }
 .char{
 	width:24px;
@@ -67,17 +72,43 @@ border-radius: 50%;
 	justify-content:center;
 	object-fit:cover;
 	background-size:cover;
+	transition: transform 1s;
+	margin-top:-10px;
 }
 .dead{
 	opacity:0.25;
 }
+.char:not(.dead){
+	text-shadow:-1px 1px rgba(255,255,255,0.5), 1px 1px rgba(255,255,255,0.5), 1px -1px rgba(255,255,255,0.5), -1px -1px rgba(255,255,255,0.5);
+}
 td,th{
 	text-align:left;
-	font-size:11px;
+	font-size:12px;
 	margin:0;
 }
 .fighting{
 	border-color:red;
+}
+.healthBar,.energyBar{
+	width:100%;
+	height:5px;
+	left:0;
+	position:absolute;
+	opacity:0.8;
+}
+.healthBar{
+	background:red;
+	bottom:5px;
+}
+.energyBar{
+	background:green;
+	bottom:0;
+}
+.charName{
+	margin-top:-15px;
+}
+.weapon{
+float:right;
 }
 </style>
 
