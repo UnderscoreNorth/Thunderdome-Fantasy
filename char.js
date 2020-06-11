@@ -7,14 +7,15 @@ class Char {
 		this.id = players.length;
 		this.health = 100;
 		this.energy = 100;
+		this.maxEnergy = 100;
 		this.stamina = 100;
 		this.kills = 0;
-		this.killExp = 1.05;
+		this.killExp = 1.15;
 		this.sightRange = 200;
 		this.sightRangeB = 0;
 		this.fightRange = 24;
 		this.fightRangeB = 0;
-		this.fightDmg = 20;
+		this.fightDmg = 25;
 		this.fightDmgB = 1.00;
 		this.currentAction = {};
 		this.awareOf = [];
@@ -38,16 +39,12 @@ class Char {
 			$('#map').append("<div id='char_" + this.id + "' class='char'><div class='charName'>" + this.name + "</div><div class='healthBar' style='margin-bottom:-10px'></div></div>");
 			charDiv = $('#char_' + this.id);
 			charDiv.css('background-image',"url(" + this.img + ")");
-			
-			$('#table').append("<div class='container alive' id='tbl_" + this.id + "'><img src='" + this.img + "'></img><div style='position:absolute;width:50px;height:50px;z-index:1;top:0;left:0'><div class='healthBar'></div><div class='energyBar'></div></div><table><tr><tr><th colspan=6>" + this.moral.substring(0,1) + this.personality.substring(0,1) + " " + this.name + "<span class='weapon'></span></th></tr></table></div>");
-			let tbl = $("#table #tbl_" + this.id + " table");
-			tbl.append("<tr><td colspan=6 class='tbl_status'></tr>");
-			tbl.append("<tr><td>K</td><td class='tbl_kills'>" + this.kills + "</td></tr>");
+			$('#table').append("<div class='container alive' id='tbl_" + this.id + "'><img src='" + this.img + "'></img><div style='position:absolute;width:50px;height:50px;z-index:1;top:0;left:0'><div class='healthBar'></div><div class='energyBar'></div><div class='kills'></div></div><div class='info'><div>" + this.moral.substring(0,1) + this.personality.substring(0,1) + " <b>" + this.name + "</b><span class='weapon'></span></div><div class='status'></div></div></div>");
 			this.div = charDiv;
 		} 
 		//charDiv.css('left',this.x / 1000 * .95 * $('#map').width() - iconSize/2);
 		//charDiv.css('top',this.y / 1000 * .95 * $('#map').height() - iconSize/2);
-		charDiv.css({transform:"translate(" + (this.x / 1000 * .95 * $('#map').width() - iconSize/2) + "px," + (this.y / 1000 * .95 * $('#map').height() - iconSize/2) + "px)"},function(){
+		charDiv.css({transform:"translate(" + (this.x / 1000 * $('#map').width() - iconSize/2) + "px," + (this.y / 1000 *  $('#map').height() - iconSize/2) + "px)"},function(){
 		});
 	}
 	calc(){
@@ -75,10 +72,15 @@ class Char {
 				}
 			}
 		}
-		//Opponents in sight
-		this.awareOf = awareOfCheck(this);
-		//Opponents in range
-		this.inRangeOf = inRangeOfCheck(this);
+		if(this.lastAction == 'sleeping'){
+			this.awareOf = [];
+			this.inRangeOf = [];
+		} else {
+			//Opponents in sight
+			this.awareOf = awareOfCheck(this);
+			//Opponents in range
+			this.inRangeOf = inRangeOfCheck(this);
+		}
 		if(!this.goal){
 			switch(this.moral){
 				case 'Chaotic':
@@ -104,6 +106,8 @@ class Char {
 				options.push(["move",100]);
 				if(this.inRangeOf.length > 0)
 					options.push(["fight",100]);
+				if((hour >= 22 || hour < 5) && this.lastAction != "woke up")
+					options.push(["sleep",100]);
 				this.plannedAction = roll(options);
 				if(this.plannedAction == "fight"){
 					this.plannedTarget = this.inRangeOf[0];
@@ -128,10 +132,17 @@ class Char {
 				case "fight":
 					this.fight();
 					break;
+				case "sleep":
+					this.sleep();
 				default:
 					//console.log(this.name + " has no planned action");
 					break;
 			}
+		}
+		if(this.lastAction == 'sleeping'){
+			this.div.find('.charName').addClass('sleep');
+		} else {
+			this.div.find('.charName').removeClass('sleep');
 		}
 		updateTable();
 		this.limitCheck();
@@ -144,49 +155,7 @@ class Char {
 			this.lastAction = "fighting";
 			let oP = this.plannedTarget;
 			oP.calc();
-			let dmg = Math.floor(Math.random() * this.fightDmg) * this.fightDmgB;
-			oP.health -= dmg;
-			if(this.weapon){
-				this.weapon.uses--;
-				if(this.weapon.uses == 0)
-					this.weapon = "";
-			}
-			oP.lastAttacker = this;
-			if(oP.health > 0){
-				this.lastAction = "fights " + oP.name;
-				let dist = hypD(oP.x - this.x,oP.y - this.y);
-				if(oP.awareOf.indexOf(this)>=0){
-					if(oP.fightRange + oP.fightRangeB >= dist){
-						let dmg = Math.floor(Math.random() * oP.fightDmg) * oP.fightDmgB;
-						this.health -= dmg;
-						if(this.weapon){
-							this.weapon.uses--;
-							if(this.weapon.uses == 0)
-								this.weapon = "";
-						}
-						if(this.health <= 0){
-							oP.lastAction = "kills " + this.name;
-							oP.kills++;
-							this.death = "killed by " + oP.name;
-						} else {
-							oP.lastAction = "fights " + this.name;
-						}
-					} else {
-						oP.lastAction = "is attacked out of range";
-					}
-				} else {
-					oP.lastAction = "is caught offguard";
-				}
-			} else {
-				this.kills++;
-				if(this.personality == oP.personality && this.personality != 'Neutral'){
-					this.lastAction = "betrays " + oP.name;
-					oP.death = "betrayed by " + this.name;
-				} else {
-					this.lastAction = "kills " + oP.name;
-					oP.death = "killed by " + this.name;
-				}
-			}
+			damage(this,oP);
 		}
 		this.energy -= 20;
 		if(this.energy < 0){
@@ -213,7 +182,7 @@ class Char {
 					this.health += Math.floor(Math.random() * 5);
 					this.lastAction = "forage success";
 					if(!this.weapon){
-						switch(roll([["🔪",1],["🔫",1],["🔱",1],["Nothing",50]])){
+						switch(roll([["🔪",10],["🔫",10],["🔱",10],["💣",1],["Nothing",500]])){
 							case "🔪":
 								this.weapon = new Item("🔪");
 								break;
@@ -222,6 +191,9 @@ class Char {
 								break;
 							case "🔱":
 								this.weapon = new Item("🔱");
+								break;
+							case "💣":
+								this.weapon = new Item("💣");
 								break;
 							default:
 								break;
@@ -266,6 +238,14 @@ class Char {
 			this.currentAction.targetX = newX;
 			this.currentAction.targetY = newY;
 		}
+		if(this.weapon){
+			if(this.weapon.name == "💣" && roll([['use',20],['notuse',100]]) == 'use'){
+				let tempBomb = new Doodad("💣",this.x,this.y,this);
+				tempBomb.draw();
+				doodads.push(tempBomb);
+				this.weapon == "";
+			}
+		}
 		//Calculating distance from target
 		let distX = this.currentAction.targetX - this.x;
 		let distY = this.currentAction.targetY - this.y;
@@ -285,8 +265,8 @@ class Char {
 		}
 		this.x = targetX;
 		this.y = targetY;
-		targetX = targetX / 1000 * .95 * $('#map').width() - iconSize/2;
-		targetY = targetY / 1000 * .95 * $('#map').height() - iconSize/2;
+		targetX = targetX / 1000 * $('#map').width() - iconSize/2;
+		targetY = targetY / 1000 * $('#map').height() - iconSize/2;
 		
 		let charDiv = $('#char_' + this.id);
 		charDiv.css({transform:"translate(" + targetX + "px," + targetY + "px)"},function(){
@@ -294,10 +274,28 @@ class Char {
 		if(this.currentAction.targetX == this.x && this.currentAction.targetY == this.y)
 			this.currentAction = {};
 		this.energy -= Math.floor(Math.random()*5+2);
-		if(Math.random*1000 > 995){
+		bombCheck(this);
+		if(Math.random()*1000 > 999 && fallOffCliffNum > 0){
 			this.health = 0;
 			this.death = "Fell off a cliff";
+			fallOffCliffNum--;
 		}
+	}
+	sleep(){
+		if(this.currentAction.name != "sleep"){
+			this.currentAction.name = "sleep";
+			this.currentAction.turnsLeft = Math.floor(Math.random()*3)+5;
+		}
+		this.currentAction.turnsLeft--;
+		this.health += Math.floor(Math.random() * 2);
+		this.energy += Math.floor(Math.random() * 10);
+		if(this.currentAction.turnsLeft > 0){
+			this.lastAction = "sleeping";
+		} else {
+			this.currentAction = {};
+			this.lastAction = "woke up";
+		}
+		
 	}
 	limitCheck(){
 		if(this.energy <= 0){
@@ -322,8 +320,7 @@ class Char {
 		$("#tbl_" + this.id).addClass("dead");
 		$("#tbl_" + this.id).removeClass("alive");
 		$("#char_" + this.id).addClass("dead");
-		$("#tbl_" + this.id + " .tbl_health").text(0);
-		$("#tbl_" + this.id + " .tbl_status").text(this.death);
+		$("#tbl_" + this.id + " .status").text(/*"D" + day + " H" + hour + " " + */this.death);
 		$('#table .container.alive').last().after($("#tbl_" + this.id));
 		moralNum[this.moral]--;
 		personalityNum[this.personality]--;

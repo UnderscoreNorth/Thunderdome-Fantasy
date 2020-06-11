@@ -43,3 +43,88 @@ function inRangeOfCheck(tP){
 	});
 	return tempArr;
 }
+function bombCheck(tP){
+	doodads.forEach(function(tD,index){
+		let dist = hypD(tP.x - tD.x, tP.y - tD.y);
+		if(dist <= tD.triggerRange){
+			let blowUpChance = 1;
+			let blowUpNoChance = 3;
+			if(tD.owner == tP)
+				blowUpNoChance += 20;
+			if(roll([["yes",blowUpChance],["no",blowUpNoChance]]) == 'yes')
+				tD.blowUp();
+		}
+	});
+}
+function damage(tP,oP){
+	let dmg = 0;
+	switch(tP.constructor.name){
+		case "Char":
+		dmg = Math.floor(Math.random() * tP.fightDmg) * tP.fightDmgB;
+		oP.health -= dmg;
+		if(tP.weapon){
+			tP.weapon.uses--;
+			if(tP.weapon.uses == 0)
+				tP.weapon = "";
+		}
+		oP.lastAttacker = tP;
+		if(oP.health > 0){
+			tP.lastAction = "fights " + oP.name;
+			let dist = hypD(oP.x - tP.x,oP.y - tP.y);
+			if(oP.awareOf.indexOf(tP)>=0){
+				if(oP.fightRange + oP.fightRangeB >= dist){
+					let dmg = Math.floor(Math.random() * oP.fightDmg) * oP.fightDmgB;
+					tP.health -= dmg;
+					if(tP.weapon){
+						tP.weapon.uses--;
+						if(tP.weapon.uses == 0)
+							tP.weapon = "";
+					}
+					if(tP.health <= 0){
+						oP.lastAction = "kills " + tP.name;
+						oP.kills++;
+						tP.death = "killed by " + oP.name;
+					} else {
+						oP.lastAction = "fights " + tP.name;
+					}
+				} else {
+					oP.lastAction = "is attacked out of range";
+				}
+			} else {
+				if(oP.lastAction == "sleeping"){
+					oP.lastAction = "was attacked in their sleep";
+				} else {
+					oP.lastAction = "is caught offguard";
+				}
+			}
+		} else {
+			tP.kills++;
+			if(tP.personality == oP.personality && tP.personality != 'Neutral'){
+				tP.lastAction = "betrays " + oP.name;
+				oP.death = "betrayed by " + tP.name;
+			} else {
+				tP.lastAction = "kills " + oP.name;
+				if(oP.lastAction == "sleeping"){
+					oP.death = "killed in their sleep by " + tP.name;
+				} else {
+					oP.death = "killed by " + tP.name;
+				}
+			}
+		}
+		break;
+	case "Doodad":
+		dmg = Math.floor(Math.random() * tP.dmg);
+		oP.health -= dmg;
+		if(oP.health <= 0){
+			tP.owner.kills++;
+			if(oP == tP.owner){
+				oP.death = "blown up by their own bomb";
+			} else {
+				oP.death = "blown up by " + tP.owner.name;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}

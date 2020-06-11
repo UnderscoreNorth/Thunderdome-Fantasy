@@ -1,12 +1,14 @@
 var players = [];
+var doodads = [];
 var interval = 1000;
 var initDone = false;
 var playing = false;
 var day = 0;
-var hour = 0;
+var hour = 8;
 var iconSize = 24;
 var moralNum = {"Chaotic":0,"Neutral":0,"Lawful":0};
 var personalityNum = {"Evil":0,"Neutral":0,"Good":0};
+var fallOffCliffNum = 3; //Max num who can fall off a cliff
 
 var charlist = [
 	["Saki","https://cdn.myanimelist.net/images/characters/7/75506.jpg"],
@@ -61,11 +63,12 @@ var charlist = [
 $( document ).ready(function(){
 	Init();
 	$(window).resize(function(){
-		$('#map').width($('#map').height());
-		$('#side').width($('body').width() - ($('#map').width() + 200));
-		players.forEach(function(chara,index){
-			chara.draw();
-		});
+		
+	});
+	$('#map').width($('#map').height());
+	$('#side').width($('body').width() - ($('#map').width() + 100));
+	players.forEach(function(chara,index){
+		chara.draw();
 	});
 });
 function Init(){
@@ -145,10 +148,12 @@ function updateTable(){
 		$("#tbl_" + chara.id + " .energyBar").css("width",(chara.energy/100)*100 + "%");
 		$("#tbl_" + chara.id + " .healthBar").css("width",(chara.health/100)*100 + "%");
 		$("#char_" + chara.id + " .healthBar").css("width",(chara.health/100)*100 + "%");
-		$("#tbl_" + chara.id + " .tbl_status").text(chara.lastAction);
-		$("#tbl_" + chara.id + " .tbl_kills").text(chara.kills);
+		$("#tbl_" + chara.id + " .status").text(chara.lastAction);
+		$("#tbl_" + chara.id + " .kills").text(chara.kills);
 		if(chara.weapon){
 			$("#tbl_" + chara.id + " .weapon").text(chara.weapon.name);
+		} else {
+			$("#tbl_" + chara.id + " .weapon").text("");
 		}
 	});
 	$('#nums').text('Moral: C ' + moralNum.Chaotic + " N " + moralNum.Neutral + " L " + moralNum.Lawful + " Personality: G " + personalityNum.Good + " N " + personalityNum.Neutral + " E " + personalityNum.Evil);

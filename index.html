@@ -5,6 +5,7 @@
 	<link rel="shortcut icon" href="">
 	<link rel="stylesheet" href="main.css">
 	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	<script src="doodad.js"></script>
 	<script src="char.js"></script>
 	<script src="action.js"></script>
 	<script src="item.js"></script>
@@ -45,9 +46,6 @@ html,body{
 	display:inline-block;
 	vertical-align:top;
 }
-#table .container table{
-	width:100px;
-}
 #table .container img{
 	width:50px;
 	height:50px;
@@ -56,8 +54,8 @@ html,body{
 #map{
 	display:inline-block;
 	vertical-align:top;
-	height:90%;
-	margin:5%;
+	height:calc(100% - 20px);
+	margin:10px;
 	background:green;
 	position:relative;
 	border-radius: 50%;
@@ -74,17 +72,20 @@ html,body{
 	background-size:cover;
 	transition: transform 1s;
 	margin-top:-10px;
+	z-index:2;
+}
+.bomb{
+	z-index:1;
+	position:absolute;
+	transition:transform 1s;
+	width:24px;
+	height:24px;
 }
 .dead{
 	opacity:0.25;
 }
 .char:not(.dead){
 	text-shadow:-1px 1px rgba(255,255,255,0.5), 1px 1px rgba(255,255,255,0.5), 1px -1px rgba(255,255,255,0.5), -1px -1px rgba(255,255,255,0.5);
-}
-td,th{
-	text-align:left;
-	font-size:12px;
-	margin:0;
 }
 .fighting{
 	border-color:red;
@@ -104,11 +105,31 @@ td,th{
 	background:green;
 	bottom:0;
 }
+.kills{
+	left:0;
+	top:0;
+	position:absolute;
+	text-shadow:-1px 1px white, 1px 1px white, 1px -1px white, -1px -1px white;
+}
 .charName{
 	margin-top:-15px;
+	display:flex;
+	justify-content:center;
+	min-width:200px;
 }
 .weapon{
-float:right;
+	
+}
+.sleep::before{
+	content:"😴";
+	vertical-align:top;
+	font-size:12px;
+	text-shadow:none;
+}
+.info{
+	display:inline-block;
+	width:100px;
+	font-size:12px;
 }
 </style>
 

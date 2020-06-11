@@ -8,16 +8,18 @@ class Item {
 		switch(this.name){
 			case "🔱":
 				this.fightBonus = 1.5;
-				this.uses = Math.floor(Math.random() * 10) + 10;
+				this.uses = Math.floor(Math.random() * 4) + 5;
 				break;
 			case "🔫":
 				this.rangeBonus = 20;
 				this.fightBonus = 1.5;
-				this.uses = 12;
+				this.uses = 4;
 				break;
 			case "🔪":
 				this.fightBonus = 1.4;
-				this.uses = Math.floor(Math.random() * 10) + 10;
+				this.uses = Math.floor(Math.random() * 4) + 5;
+				break;
+			case "💣":
 				break;
 		}
 	}
