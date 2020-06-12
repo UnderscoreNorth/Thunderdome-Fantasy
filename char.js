@@ -24,8 +24,8 @@ class Char {
 		//Modifiers
 		this.fightDesire = 100;
 		this.peaceDesire = 100;
-		this.moral = roll([['Chaotic',1],['Neutral',1],['Lawful',1]]);
-		this.personality = roll([['Evil',1],['Neutral',1],['Good',1]]);
+		this.moral = roll([['Chaotic',1],['Neutral',2],['Lawful',1]]);
+		this.personality = roll([['Evil',1],['Neutral',2],['Good',1]]);
 		this.traits = {};
 		moralNum[this.moral]++;
 		personalityNum[this.personality]++;
@@ -44,7 +44,7 @@ class Char {
 		} 
 		//charDiv.css('left',this.x / 1000 * .95 * $('#map').width() - iconSize/2);
 		//charDiv.css('top',this.y / 1000 * .95 * $('#map').height() - iconSize/2);
-		charDiv.css({transform:"translate(" + (this.x / 1000 * $('#map').width() - iconSize/2) + "px," + (this.y / 1000 *  $('#map').height() - iconSize/2) + "px)"},function(){
+		charDiv.css({transform:"translate(" + (this.x / mapSize * $('#map').width() - iconSize/2) + "px," + (this.y / mapSize *  $('#map').height() - iconSize/2) + "px)"},function(){
 		});
 	}
 	calc(){
@@ -103,15 +103,27 @@ class Char {
 				this.plannedAction = this.currentAction.name;
 			} else {
 				this.currentAction = {};
-				options.push(["move",100]);
-				if(this.inRangeOf.length > 0)
-					options.push(["fight",100]);
-				if((hour >= 22 || hour < 5) && this.lastAction != "woke up")
-					options.push(["sleep",100]);
-				this.plannedAction = roll(options);
-				if(this.plannedAction == "fight"){
-					this.plannedTarget = this.inRangeOf[0];
-					this.inRangeOf[0].plannedAction = "fight";
+				let sexSwordNearby = false;
+				let tP = this;
+				this.inRangeOf.forEach(function(oP,index){
+					if(oP.weapon.name == "🗡"){
+						sexSwordNearby = true;
+						tP.plannedTarget = oP;
+						tP.plannedAction = "fight";
+						oP.plannedAction = "fight";
+					}
+				});
+				if(!sexSwordNearby){
+					options.push(["move",100]);
+					if(this.inRangeOf.length > 0)
+						options.push(["fight",100]);
+					if((hour >= 22 || hour < 5) && this.lastAction != "woke up")
+						options.push(["sleep",100]);
+					this.plannedAction = roll(options);
+					if(this.plannedAction == "fight"){
+						this.plannedTarget = this.inRangeOf[0];
+						this.inRangeOf[0].plannedAction = "fight";
+					}
 				}
 			}
 		}
@@ -182,7 +194,11 @@ class Char {
 					this.health += Math.floor(Math.random() * 5);
 					this.lastAction = "forage success";
 					if(!this.weapon){
-						switch(roll([["🔪",10],["🔫",10],["🔱",10],["💣",1],["Nothing",500]])){
+						let weaponOdds = [["🔪",10],["🔫",10],["🔱",10],["💣",5],["Nothing",500]];
+						if(sexSword){
+							weaponOdds.push(["🗡",5]);
+						}
+						switch(roll(weaponOdds)){
 							case "🔪":
 								this.weapon = new Item("🔪");
 								break;
@@ -195,11 +211,17 @@ class Char {
 							case "💣":
 								this.weapon = new Item("💣");
 								break;
+							case "🗡":
+								this.weapon = new Item("🗡");
+								sexSword = false;
+								break;
 							default:
 								break;
 						}
 						if(this.weapon){
 							this.lastAction = "found " + this.weapon.name;
+							if(this.weapon.name == "🗡")
+								this.lastAction = "<span style='color:red'>found SEX SWORD</span>";
 							this.calc();
 						}
 					}
@@ -220,20 +242,33 @@ class Char {
 			this.currentAction = {};
 			let newX = 0;
 			let newY = 0;
-			if(Math.random() > players.length/100 && this.awareOf.length){
-				newX = this.awareOf[0].x;
-				newY = this.awareOf[0].y;
-				this.lastAction = "following " + this.awareOf[0].name;
-				this.currentAction.name = "";
-			} else {
-				let tries = 0;
-				do {
-					newX = Math.floor(Math.random()*1000);
-					newY = Math.floor(Math.random()*1000);
-					tries++;
-				} while(!boundsCheck(newX,newY) && tries < 10);
-				this.lastAction = "moving";
-				this.currentAction.name = "move";
+			let sexSwordNearby = false;
+			let tP = this;
+			this.awareOf.forEach(function(oP,index){
+				if(oP.weapon.name == "🗡"){
+					sexSwordNearby = true;
+					newX = oP.x;
+					newY = oP.y;
+					tP.lastAction = "following SEX SWORD";
+					tP.currentAction.name = "";
+				}
+			});
+			if(!sexSwordNearby){
+				if(Math.random() > players.length/100 && this.awareOf.length){
+					newX = this.awareOf[0].x;
+					newY = this.awareOf[0].y;
+					this.lastAction = "following " + this.awareOf[0].name;
+					this.currentAction.name = "";
+				} else {
+					let tries = 0;
+					do {
+						newX = Math.floor(Math.random()*mapSize);
+						newY = Math.floor(Math.random()*mapSize);
+						tries++;
+					} while(!boundsCheck(newX,newY) && tries < 10);
+					this.lastAction = "moving";
+					this.currentAction.name = "move";
+				}
 			}
 			this.currentAction.targetX = newX;
 			this.currentAction.targetY = newY;
@@ -243,7 +278,7 @@ class Char {
 				let tempBomb = new Doodad("💣",this.x,this.y,this);
 				tempBomb.draw();
 				doodads.push(tempBomb);
-				this.weapon == "";
+				this.weapon = "";
 			}
 		}
 		//Calculating distance from target
@@ -265,8 +300,8 @@ class Char {
 		}
 		this.x = targetX;
 		this.y = targetY;
-		targetX = targetX / 1000 * $('#map').width() - iconSize/2;
-		targetY = targetY / 1000 * $('#map').height() - iconSize/2;
+		targetX = targetX / mapSize * $('#map').width() - iconSize/2;
+		targetY = targetY / mapSize * $('#map').height() - iconSize/2;
 		
 		let charDiv = $('#char_' + this.id);
 		charDiv.css({transform:"translate(" + targetX + "px," + targetY + "px)"},function(){
@@ -317,6 +352,7 @@ class Char {
 	}
 	die(){
 		players = arrayRemove(players,this);
+		dedPlayers.push(this);
 		$("#tbl_" + this.id).addClass("dead");
 		$("#tbl_" + this.id).removeClass("alive");
 		$("#char_" + this.id).addClass("dead");
@@ -324,5 +360,14 @@ class Char {
 		$('#table .container.alive').last().after($("#tbl_" + this.id));
 		moralNum[this.moral]--;
 		personalityNum[this.personality]--;
+		if(this.weapon){
+			if(this.weapon.name == "💣"){
+				let tempBomb = new Doodad("💣",this.x,this.y,this);
+				tempBomb.draw();
+				doodads.push(tempBomb);
+				tempBomb.blowUp();
+				this.weapon = "";
+			}
+		}
 	}
 }

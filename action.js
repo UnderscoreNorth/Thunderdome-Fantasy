@@ -22,15 +22,19 @@ function inRangeOfCheck(tP){
 				let peaceChance = 50;
 				if(tP.personality == oP.personality){
 					peaceChance += 40;
-					fightChance -= 40;
+					fightChance -= 20;
 				} else if (tP.personality != 'Neutral' && oP.personality != 'Neutral'){
-					fightChance += 50;
-					peaceChance -= 25;
+					fightChance += 40;
+					peaceChance -= 20;
 				}
 				if(tP.moral == 'Lawful')
-					peaceChance += 100;
+					peaceChance += 75;
 				if(tP.moral == 'Chaotic')
 					fightChance += 100;
+				if(tP.weapon.name == "🗡️" || oP.weapon.name == "🗡️"){
+					peaceChance = 0;
+					fightChance = 1;
+				}
 				//console.log("Fight check");
 				//console.log(tP);
 				//console.log(oP);
@@ -62,6 +66,8 @@ function damage(tP,oP){
 		case "Char":
 		dmg = Math.floor(Math.random() * tP.fightDmg) * tP.fightDmgB;
 		oP.health -= dmg;
+		if(tP.weapon.name == "🗡️")
+			tP.health += dmg;
 		if(tP.weapon){
 			tP.weapon.uses--;
 			if(tP.weapon.uses == 0)
@@ -75,6 +81,8 @@ function damage(tP,oP){
 				if(oP.fightRange + oP.fightRangeB >= dist){
 					let dmg = Math.floor(Math.random() * oP.fightDmg) * oP.fightDmgB;
 					tP.health -= dmg;
+					if(oP.weapon.name == "🗡️")
+						oP.health += dmg;
 					if(tP.weapon){
 						tP.weapon.uses--;
 						if(tP.weapon.uses == 0)
@@ -84,11 +92,16 @@ function damage(tP,oP){
 						oP.lastAction = "kills " + tP.name;
 						oP.kills++;
 						tP.death = "killed by " + oP.name;
+						if(tP.weapon.name == "🗡" && Math.random() > 0.5){
+							oP.weapon = tP.weapon;
+							tP.weapon = "";
+						}
 					} else {
 						oP.lastAction = "fights " + tP.name;
 					}
 				} else {
 					oP.lastAction = "is attacked out of range";
+					console.log(oP.fightRange + " " + oP.fightRangeB + " " + dist);
 				}
 			} else {
 				if(oP.lastAction == "sleeping"){
@@ -99,6 +112,10 @@ function damage(tP,oP){
 			}
 		} else {
 			tP.kills++;
+			if(oP.weapon.name == "🗡" && Math.random() > 0.5){
+				tP.weapon = oP.weapon;
+				oP.weapon = "";
+			}
 			if(tP.personality == oP.personality && tP.personality != 'Neutral'){
 				tP.lastAction = "betrays " + oP.name;
 				oP.death = "betrayed by " + tP.name;

@@ -4,7 +4,8 @@ class Doodad {
 		this.x = x;
 		this.y = y;
 		this.owner = owner;
-		this.id = doodads.length;
+		this.id = doodadsNum;
+		doodadsNum++;
 		switch(this.name){
 			case "💣":
 				this.range = 100;

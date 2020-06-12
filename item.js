@@ -21,6 +21,10 @@ class Item {
 				break;
 			case "💣":
 				break;
+			case "🗡️":
+				this.fightBonus = 2.5;
+				this.uses = 99999;
+				break;
 		}
 	}
 }
