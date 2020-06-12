@@ -36,7 +36,7 @@ class Char {
 	draw() {
 		let charDiv = $('#char_' + this.id);
 		if(!charDiv.length){
-			$('#map').append("<div id='char_" + this.id + "' class='char'><div class='charName'>" + this.name + "</div><div class='healthBar' style='margin-bottom:-10px'></div></div>");
+			$('#players').append("<div id='char_" + this.id + "' class='char'><div class='charName'>" + this.name + "</div><div class='healthBar' style='margin-bottom:-10px'></div></div>");
 			charDiv = $('#char_' + this.id);
 			charDiv.css('background-image',"url(" + this.img + ")");
 			$('#table').append("<div class='container alive' id='tbl_" + this.id + "'><img src='" + this.img + "'></img><div style='position:absolute;width:50px;height:50px;z-index:1;top:0;left:0'><div class='healthBar'></div><div class='energyBar'></div><div class='kills'></div></div><div class='info'><div>" + this.moral.substring(0,1) + this.personality.substring(0,1) + " <b>" + this.name + "</b><span class='weapon'></span></div><div class='status'></div></div></div>");
@@ -58,9 +58,21 @@ class Char {
 		}
 		if(this.kills)
 			this.fightDmgB *= Math.pow(this.killExp,this.kills);
+		switch(terrainCheck(this.x,this.y)){
+			case "⛰️":
+				this.sightRangeB += 100;
+				break;
+			case "🌳":
+				this.sightRangeB -= 50;
+				this.fightRangeB -= 4;
+				break;
+			default:
+				break;
+		} 
 	}
 	planAction(){
 		//Lancer check
+		this.calc();
 		if(this.weapon){
 			if(this.weapon.name == "🔱"){
 				if(roll([["die",1],["live",20000]]) == "die"){
@@ -309,11 +321,26 @@ class Char {
 		if(this.currentAction.targetX == this.x && this.currentAction.targetY == this.y)
 			this.currentAction = {};
 		this.energy -= Math.floor(Math.random()*5+2);
+		if(terrainCheck(this.x,this.y)=="💧" && this.lastAction == "moving"){
+			this.lastAction = "swimming";
+			this.energy -= Math.floor(Math.random()*5+2);
+		}
 		bombCheck(this);
-		if(Math.random()*1000 > 999 && fallOffCliffNum > 0){
-			this.health = 0;
-			this.death = "Fell off a cliff";
-			fallOffCliffNum--;
+		if(roll([["die",1],["live",2000]]) == "die" && terrainDeath > 0 ){
+			switch(terrainCheck(this.x,this.y)){
+				case "️⛰️":
+					this.health = 0;
+					this.death = "Fell off a cliff";
+					terrainDeath--;
+					break;
+				case "💧":
+					this.health = 0;
+					this.death = "Drowned";
+					terrainDeath--;
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	sleep(){

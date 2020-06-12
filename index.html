@@ -5,6 +5,7 @@
 	<link rel="shortcut icon" href="">
 	<link rel="stylesheet" href="main.css">
 	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	<script src="terrain.js"></script>
 	<script src="doodad.js"></script>
 	<script src="char.js"></script>
 	<script src="action.js"></script>
@@ -20,6 +21,9 @@
 		</div>
 	</div>
 	<div id='map'>
+		<div id='terrain'></div>
+		<div id='doodads'></div>
+		<div id='players'></div>
 	</div>
 </body>
 <style>
@@ -74,9 +78,16 @@ html,body{
 	background-size:cover;
 	transition: transform 1s;
 	margin-top:-10px;
-	z-index:2;
+	z-index:3;
 }
 .bomb{
+	z-index:2;
+	position:absolute;
+	transition:transform 1s;
+	width:24px;
+	height:24px;
+}
+.terrain{
 	z-index:1;
 	position:absolute;
 	transition:transform 1s;

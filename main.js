@@ -1,9 +1,11 @@
 var players = [];
 var dedPlayers = [];
+var terrain = [];
 var doodads = [];
+var riverSpawns = [];
 var doodadsNum = 0;
 var interval = 1000;
-var mapSize = 500;
+var mapSize = 1000;
 var initDone = false;
 var playing = false;
 var day = 0;
@@ -11,8 +13,9 @@ var hour = 8;
 var iconSize = 24;
 var moralNum = {"Chaotic":0,"Neutral":0,"Lawful":0};
 var personalityNum = {"Evil":0,"Neutral":0,"Good":0};
-var fallOffCliffNum = 3; //Max num who can fall off a cliff
+var terrainDeath = 3; //Max num who can fall off a cliff
 var sexSword = true;
+var dirArr = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]];
 
 var charlist = [
 	["Saki","https://cdn.myanimelist.net/images/characters/7/75506.jpg"],
@@ -74,7 +77,7 @@ var charlist = [
 	["Purple hair","https://s4.anilist.co/file/anilistcdn/character/large/b130725-DRTk9Q1DXRUR.jpg"],
 	["Scorpion Girl","https://s4.anilist.co/file/anilistcdn/character/large/b145825-3gg6RaGwx8qg.png"]	
 ];
-charlist = [
+/*charlist = [
    [
       "_North",
       "http://i.imgur.com/R39sUM9.png"
@@ -143,21 +146,29 @@ charlist = [
       "SeaSlug",
       "https://witcheffect.com/sprites/pixels/Hatsune%20Miku%20v3.png"
    ]
-]
+];*/
 $( document ).ready(function(){
 	Init();
-	$(window).resize(function(){
-		
-	});
-	$('#map').width($('#map').height());
-	$('#side').width($('body').width() - ($('#map').width() + 100));
 	players.forEach(function(chara,index){
 		chara.draw();
 	});
 });
 function Init(){
 	$('#map').width($('#map').height());
-	$('#side').width($('body').width() - ($('#map').width() + 200));
+	$('#side').width($('body').width() - ($('#map').width() + 100));
+	for(var i = 0;i<=mapSize;i+=25){
+		terrain[i] = [];
+		for(var j =0;j<=mapSize;j+=25){
+			if(boundsCheck(i,j)){
+				let tempTerr = new Terrain("rand",i,j);
+				tempTerr.draw();
+				terrain[i][j] = tempTerr;
+			}
+		}
+	}
+	spreadTerrain();
+	spreadTerrain();
+	generateRiver();
 	for(var i = 0;i<charlist.length;i++){
 		let x = 0;
 		let y = 0;
@@ -218,14 +229,21 @@ function MapResize(){
 	
 }
 function boundsCheck(x,y){
-	x = Math.abs(x-mapSize/2);
-	y = Math.abs(y-mapSize/2);
-	let limit = Math.sqrt(Math.pow(mapSize/2,2) - Math.pow(x,2));
-	if(y > limit){
-		return false;
-	} else {
-		return true;
+	let valid = true;
+	let boundX = Math.abs(x-mapSize/2);
+	let boundY = Math.abs(y-mapSize/2);
+	let limit = Math.sqrt(Math.pow(mapSize/2,2) - Math.pow(boundX,2));
+	if(boundY > limit){
+		valid = false;
 	}
+	let roundX = Math.round(x/25)*25;
+	let roundY = Math.round(y/25)*25;
+	if(terrain[roundX][roundY]){
+		if(terrain[roundX][roundY].type == "💧"){
+			valid = false;
+		}
+	}
+	return valid;
 }
 function updateTable(){
 	players.forEach(function(chara,index){
@@ -259,6 +277,56 @@ function hypD(x,y,hyp=true){
 	} else {
 		return Math.sqrt(Math.pow(x,2)-Math.pow(y,2));
 	}
+}
+function terrainCheck(x,y){
+	let roundX = Math.round(x/25)*25;
+	let roundY = Math.round(y/25)*25;
+	if(terrain[roundX][roundY]){
+		return terrain[roundX][roundY].type;
+	} else {
+		return "Index error";
+	}
+}
+function spreadTerrain(){
+	for(var i = 0;i<=mapSize;i+=25){
+		for(var j =0;j<=mapSize;j+=25){
+			if(terrain[i][j]){
+				terrain[i][j].spread();
+			}
+		}
+	}
+}
+function generateRiver(){
+	riverSpawns.forEach(function(river,index){
+		var dir = Math.floor(Math.random()*8);
+		do {
+			xDir = Math.floor(Math.random() * 3) - 1;
+			yDir = Math.floor(Math.random() * 3) - 1;
+		} while (xDir != 0 && yDir != 0);
+		var length = Math.floor(Math.random()*20) + 5;
+		//console.log(dir);
+		var currX = river.x+dirArr[dir][0]*25;
+		var currY = river.y+dirArr[dir][1]*25;
+		for(var i = 0;i<length;i++){
+			//console.log(currX + " " + currY)
+			if(terrain[currX]){
+				if(terrain[currX][currY]){
+					terrain[currX][currY].type = "💧";
+					terrain[currX][currY].draw();
+				} 
+			}
+			let ChangeDir = Math.floor(Math.random() * 3) - 1;
+			dir += ChangeDir;
+			if(dir < 0)
+				dir = 0;
+			if(dir > 7)
+				dir = 7;
+			//console.log(dir);
+			currX += dirArr[dir][0]*25;
+			currY += dirArr[dir][1]*25;
+			
+		}
+	});
 }
 function roll(options){
 	let tempArr = [];

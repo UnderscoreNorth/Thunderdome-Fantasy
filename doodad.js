@@ -17,7 +17,7 @@ class Doodad {
 	draw(){
 		let doodDiv = $('#doodad_' + this.id);
 		if(!doodDiv.length){
-			$('#map').append("<div id='doodad_" + this.id + "' class='bomb' style='transform:translate(" + (this.x / 1000 * $('#map').width() - iconSize/2) + "px," + (this.y / 1000 *  $('#map').height() - iconSize/2) + "px)'>💣</div>");
+			$('#doodads').append("<div id='doodad_" + this.id + "' class='bomb' style='transform:translate(" + (this.x / 1000 * $('#map').width() - iconSize/2) + "px," + (this.y / 1000 *  $('#map').height() - iconSize/2) + "px)'>💣</div>");
 			doodDiv = $('#doodad_' + this.id);
 			this.div = doodDiv;
 		}
