@@ -13,17 +13,21 @@
 	<script src="main.js"></script>
 </head>
 <body>
+	<div id='map'>
+		<div id='terrain'></div>
+		<div id='doodads'></div>
+		<div id='players'></div>
+	</div>
 	<div id='side'>
 		<button onClick="auto()">Auto</button>
 		<button onClick="turn()">Next Hour</button>
 		<span id='day'></span><span style='margin-left:10px' id='nums'></span>
 		<div id='table'>
+			<input id='txt_spreadTerrain' value=3 style='width:40px'></input> Water & Mountain Spread<br>
+			<button onClick="generateTerrain()">Generate Terrain</button>
+			<button onClick="startGame()">Start Game</button><br>
+			<textarea id='charas' style='width:100%;height:calc(100% - 100px)'></textarea>
 		</div>
-	</div>
-	<div id='map'>
-		<div id='terrain'></div>
-		<div id='doodads'></div>
-		<div id='players'></div>
 	</div>
 </body>
 <style>
@@ -83,16 +87,16 @@ html,body{
 .bomb{
 	z-index:2;
 	position:absolute;
-	transition:transform 1s;
 	width:24px;
 	height:24px;
+	text-align:center;
 }
 .terrain{
 	z-index:1;
 	position:absolute;
-	transition:transform 1s;
-	width:24px;
-	height:24px;
+	width:25px;
+	height:25px;
+	text-align:center;
 }
 .dead{
 	opacity:0.25;

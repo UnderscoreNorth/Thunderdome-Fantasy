@@ -66,6 +66,9 @@ class Char {
 				this.sightRangeB -= 50;
 				this.fightRangeB -= 4;
 				break;
+			case "💧":
+				this.fightRangeB = 0;
+				break;
 			default:
 				break;
 		} 
@@ -109,7 +112,7 @@ class Char {
 		}
 		if(!this.plannedAction){
 			let options = [];
-			if(this.energy < Math.random()*25 + 25){
+			if(this.energy < Math.random()*25 + 25 && terrainCheck(this.x,this.y) != "💧"){
 				this.plannedAction = "forage";
 			} else if(this.currentAction.name){
 				this.plannedAction = this.currentAction.name;
@@ -129,7 +132,7 @@ class Char {
 					options.push(["move",100]);
 					if(this.inRangeOf.length > 0)
 						options.push(["fight",100]);
-					if((hour >= 22 || hour < 5) && this.lastAction != "woke up")
+					if((hour >= 22 || hour < 5) && this.lastAction != "woke up" && terrainCheck(this.x,this.y) != "💧")
 						options.push(["sleep",100]);
 					this.plannedAction = roll(options);
 					if(this.plannedAction == "fight"){
@@ -139,10 +142,10 @@ class Char {
 				}
 			}
 		}
-		//console.log(this);
 		action();
 	}
 	doAction(){
+		timerClick(this.name + " " + this.plannedAction);
 		this.div.removeClass("fighting");
 		if(this.health > 0){
 			//console.log(this.name + " " + this.plannedAction);
@@ -168,9 +171,14 @@ class Char {
 		} else {
 			this.div.find('.charName').removeClass('sleep');
 		}
-		updateTable();
+		timerClick("updateTable");
+		
+		timerClick("updateTable");
+		timerClick("limitCheck");
 		this.limitCheck();
+		timerClick("limitCheck");
 		this.finishedAction = true;
+		timerClick(this.name + " " + this.plannedAction);
 	}
 	fight(){
 		this.calc();
@@ -250,6 +258,7 @@ class Char {
 		}
 	}
 	move(){
+		timerClick("move");
 		if(this.currentAction.name != "move"){
 			this.currentAction = {};
 			let newX = 0;
@@ -317,6 +326,7 @@ class Char {
 		
 		let charDiv = $('#char_' + this.id);
 		charDiv.css({transform:"translate(" + targetX + "px," + targetY + "px)"},function(){
+			bombCheck(this);
 		});
 		if(this.currentAction.targetX == this.x && this.currentAction.targetY == this.y)
 			this.currentAction = {};
@@ -325,7 +335,6 @@ class Char {
 			this.lastAction = "swimming";
 			this.energy -= Math.floor(Math.random()*5+2);
 		}
-		bombCheck(this);
 		if(roll([["die",1],["live",2000]]) == "die" && terrainDeath > 0 ){
 			switch(terrainCheck(this.x,this.y)){
 				case "️⛰️":
@@ -342,6 +351,7 @@ class Char {
 					break;
 			}
 		}
+		timerClick("move");
 	}
 	sleep(){
 		if(this.currentAction.name != "sleep"){

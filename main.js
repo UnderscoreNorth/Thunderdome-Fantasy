@@ -16,6 +16,8 @@ var personalityNum = {"Evil":0,"Neutral":0,"Good":0};
 var terrainDeath = 3; //Max num who can fall off a cliff
 var sexSword = true;
 var dirArr = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]];
+var lastT = 0;
+var timerClicks = {};
 
 var charlist = [
 	["Saki","https://cdn.myanimelist.net/images/characters/7/75506.jpg"],
@@ -154,21 +156,24 @@ $( document ).ready(function(){
 	});
 });
 function Init(){
-	$('#map').width($('#map').height());
-	$('#side').width($('body').width() - ($('#map').width() + 100));
-	for(var i = 0;i<=mapSize;i+=25){
-		terrain[i] = [];
-		for(var j =0;j<=mapSize;j+=25){
-			if(boundsCheck(i,j)){
-				let tempTerr = new Terrain("rand",i,j);
-				tempTerr.draw();
-				terrain[i][j] = tempTerr;
-			}
-		}
+	if($('body').width() > $('body').height()){
+		$('#map').width($('#map').height());
+		$('#map').height($('#map').width());
+		$('#side').width("calc(100% - 40px - " + ($('#map').width() + 100) + "px)");
+		$('#side').css({'max-height':'100%','overflow-y':'scroll'});
+	} else {
+		$('#map').width('calc(100% - 40px)');
+		$('#map').height($('#map').width());
+		$('#map').width($('#map').height());
+		$('#side').width("100%");
+		$('#side').css({'max-height':'calc(100% - 40px - ' + $('#map').height() + "px)",'overflow-y':'scroll'});
 	}
-	spreadTerrain();
-	spreadTerrain();
-	generateRiver();
+	$('#charas').val(JSON.stringify(charlist,null,1));
+	initDone = true;
+}
+function startGame(){
+	charlist = JSON.parse($('#charas').val().toString());
+	$('#table').html('');
 	for(var i = 0;i<charlist.length;i++){
 		let x = 0;
 		let y = 0;
@@ -185,7 +190,6 @@ function Init(){
 		tempChar.draw();
 		players.push(tempChar);
 	}
-	initDone = true;
 	setInterval(timer,interval);
 }
 function timer(){
@@ -206,7 +210,11 @@ function turn(){
 		players.sort(() => Math.random() - 0.5);
 		players.forEach(chara => chara.plannedAction = "");
 		players.forEach(chara => chara.finishedAction = false);
-		players.forEach(chara => chara.planAction());
+		players.forEach(function(chara,index){
+			timerClick("plan " + chara.name);
+			chara.planAction();
+			timerClick("plan " + chara.name);
+		});
 	}
 }
 function action(){
@@ -216,13 +224,18 @@ function action(){
 			numReady++;
 	});
 	if(numReady == players.length){
-		players.forEach(chara => chara.doAction());
+		players.forEach(function(chara,index){
+			timerClick("do " + chara.name);
+			chara.doAction();
+			timerClick("do " + chara.name);
+		});
 		hour++;
 		if(hour == 24){
 			hour = 0;
 			day++;
 		}
 		$('#day').text("Day " + day + " Hour " + hour);
+		updateTable();
 	}
 }
 function MapResize(){
@@ -238,9 +251,11 @@ function boundsCheck(x,y){
 	}
 	let roundX = Math.round(x/25)*25;
 	let roundY = Math.round(y/25)*25;
-	if(terrain[roundX][roundY]){
-		if(terrain[roundX][roundY].type == "💧"){
-			valid = false;
+	if(terrain[roundX]){
+		if(terrain[roundX][roundY]){
+			if(terrain[roundX][roundY].type == "💧"){
+				valid = false;
+			}
 		}
 	}
 	return valid;
@@ -286,6 +301,39 @@ function terrainCheck(x,y){
 	} else {
 		return "Index error";
 	}
+}
+var generated = false;
+function generateTerrain(){
+	terrain.forEach(function(terrRow,i){
+		terrRow.forEach(function(terr,j){
+			terr.destroy();
+		});
+	});
+	riverSpawns = [];
+	if(!generated){
+	for(var i = 0;i<=mapSize;i+=25){
+		terrain[i] = [];
+		timerClick("terrain row " + i);
+		for(var j =0;j<=mapSize;j+=25){
+			if(boundsCheck(i,j)){
+				let tempTerr = new Terrain("rand",i,j);
+				tempTerr.draw();
+				terrain[i][j] = tempTerr;
+			}
+		}
+		timerClick("terrain row " + i);
+	}
+	timerClick("terrain spread");
+	if(Math.floor($('#txt_spreadTerrain').val()) > 0){
+		for(var i = 0;i<$('#txt_spreadTerrain').val();i++){
+			spreadTerrain();
+			console.log("");
+		}
+	}
+	generateRiver();
+	timerClick("terrain spread");
+	}
+	//generated = true;
 }
 function spreadTerrain(){
 	for(var i = 0;i<=mapSize;i+=25){
@@ -339,4 +387,14 @@ function roll(options){
 	//console.log(tempArr);
 	tempArr.sort(() => Math.random() - 0.5);
 	return tempArr[0];
+}
+function timerClick(val){
+	var d = new Date();
+	if(timerClicks[val]) {
+		//console.log(val + " - " + (d.getTime() - timerClicks[val]));
+		timerClicks[val] = "";
+	} else {
+		timerClicks[val] = d.getTime();
+		//console.log(val + " started");
+	}
 }

@@ -15,11 +15,15 @@ class Terrain {
 	draw(){
 		let terrainDiv = $('#terrain_' + this.x + "_" + this.y);
 		if(!terrainDiv.length){
-			$('#terrain').append("<div id='terrain_" + this.x + "_" + this.y + "' class='terrain' style='transform:translate(" + (this.x / mapSize * $('#map').width() - iconSize/2) + "px," + (this.y / mapSize *  $('#map').height() - iconSize/2) + "px)'>" + this.type + "</div>");
+			$('#terrain').append("<div id='terrain_" + this.x + "_" + this.y + "' class='terrain' style='transform:translate(" + (this.x / mapSize * $('#map').width() - 12.5) + "px," + (this.y / mapSize *  $('#map').height() - 12.5) + "px)'>" + this.type + "</div>");
 			terrainDiv = $('#terrain_' + this.x + "_" + this.y);
 			this.div = terrainDiv;
 		}
-		this.div.text(this.type);
+		terrainDiv.text(this.type);
+	}
+	destroy(){
+		this.div.remove();
+		terrain[this.x] = arrayRemove(terrain[this.x],this);
 	}
 	spread(){
 		if(this.type=="💧" && !this.spreadOnce){
