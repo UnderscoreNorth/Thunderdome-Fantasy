@@ -60,11 +60,14 @@ function bombCheck(tP){
 		}
 	});
 }
+function rollDmg(tP){
+	return Math.floor((Math.random() * tP.fightDmg / 2) + (Math.random() * tP.fightDmg / 2)) * tP.fightDmgB;
+}
 function damage(tP,oP){
 	let dmg = 0;
 	switch(tP.constructor.name){
 		case "Char":
-		dmg = Math.floor(Math.random() * tP.fightDmg) * tP.fightDmgB;
+		dmg = rollDmg(tP);
 		oP.health -= dmg;
 		if(tP.weapon.name == "🗡️")
 			tP.health += dmg;
@@ -79,7 +82,7 @@ function damage(tP,oP){
 			let dist = hypD(oP.x - tP.x,oP.y - tP.y);
 			if(oP.awareOf.indexOf(tP)>=0){
 				if(oP.fightRange + oP.fightRangeB >= dist){
-					let dmg = Math.floor(Math.random() * oP.fightDmg) * oP.fightDmgB;
+					let dmg = rollDmg(oP);
 					tP.health -= dmg;
 					if(oP.weapon.name == "🗡️")
 						oP.health += dmg;

@@ -296,10 +296,12 @@ function hypD(x,y,hyp=true){
 function terrainCheck(x,y){
 	let roundX = Math.round(x/25)*25;
 	let roundY = Math.round(y/25)*25;
-	if(terrain[roundX][roundY]){
-		return terrain[roundX][roundY].type;
-	} else {
-		return "Index error";
+	if(terrain[roundX]){
+		if(terrain[roundX][roundY]){
+			return terrain[roundX][roundY].type;
+		} else {
+			return "Index error";
+		}
 	}
 }
 var generated = false;

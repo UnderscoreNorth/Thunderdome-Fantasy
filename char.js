@@ -21,6 +21,7 @@ class Char {
 		this.awareOf = [];
 		this.finishedAction = true;
 		this.goal = "";
+		this.moveSpeed = mapSize / 40;
 		//Modifiers
 		this.fightDesire = 100;
 		this.peaceDesire = 100;
@@ -309,15 +310,38 @@ class Char {
 		let targetX = 0;
 		let targetY = 0;
 		
-		//If target is 50 away
-		if(dist <= 50){
+		if(terrainCheck(this.x,this.y)=="💧"){
+			this.moveSpeedB = 0.5;
+		} else {
+			this.moveSpeedB = 1;
+		}
+		if(dist <= this.moveSpeed * this.moveSpeedB){
 			targetX = this.currentAction.targetX;
 			targetY = this.currentAction.targetY;
 		} else {
-			let shiftX = distX / (dist/50);
-			let shiftY = distY / (dist/50);
+			let shiftX = distX / (dist/(this.moveSpeed * this.moveSpeedB));
+			let shiftY = distY / (dist/(this.moveSpeed * this.moveSpeedB));
 			targetX = this.x + shiftX;
 			targetY = this.y + shiftY;
+			//console.log(terrainCheck(targetX,targetY));
+			if(terrainCheck(targetX,targetY) == "💧" && terrainCheck(this.x + shiftX * 2, this.y + shiftY * 2)  == "💧" && this.lastAction != "swimming"){
+				let swimChance = roll([["yes",1],["no",50]]);
+				if(swimChance == "no"){
+					var redirectTimes = 0;
+					var redirectDir = roll([[-1,1],[1,1]]);
+					var initialDir = Math.acos(shiftY/(this.moveSpeed*this.moveSpeedB));
+					var tries = 314;
+					do {					
+						redirectTimes++;
+						let newDir = initialDir + redirectDir * redirectTimes * 0.05;
+						shiftX = (this.moveSpeed * this.moveSpeedB) * Math.sin(newDir);
+						shiftY = (this.moveSpeed * this.moveSpeedB) * Math.cos(newDir);
+						targetX = this.x + shiftX;
+						targetY = this.y + shiftY;
+						tries--;
+					} while (swimChance == "no" && terrainCheck(targetX,targetY) == "💧" && tries > 0 && boundsCheck(targetX,targetY));
+				}
+			}
 		}
 		this.x = targetX;
 		this.y = targetY;
@@ -326,14 +350,16 @@ class Char {
 		
 		let charDiv = $('#char_' + this.id);
 		charDiv.css({transform:"translate(" + targetX + "px," + targetY + "px)"},function(){
-			bombCheck(this);
+			
 		});
+		bombCheck(this);
 		if(this.currentAction.targetX == this.x && this.currentAction.targetY == this.y)
 			this.currentAction = {};
 		this.energy -= Math.floor(Math.random()*5+2);
-		if(terrainCheck(this.x,this.y)=="💧" && this.lastAction == "moving"){
+		if(terrainCheck(this.x,this.y)=="💧"){
 			this.lastAction = "swimming";
-			this.energy -= Math.floor(Math.random()*5+2);
+		} else if(terrainCheck(this.x,this.y)!="💧" && this.lastAction == "swimming"){
+			this.lastAction = "moving";
 		}
 		if(roll([["die",1],["live",2000]]) == "die" && terrainDeath > 0 ){
 			switch(terrainCheck(this.x,this.y)){
