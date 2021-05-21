@@ -5,6 +5,8 @@
 	<link rel="shortcut icon" href="">
 	<link rel="stylesheet" href="main.css">
 	<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+	<script src="charlist.js"></script>
 	<script src="terrain.js"></script>
 	<script src="doodad.js"></script>
 	<script src="char.js"></script>
@@ -13,7 +15,7 @@
 	<script src="main.js"></script>
 </head>
 <body>
-	<div id='map'>
+	<div id='map' xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs">
 		<div id='terrain'></div>
 		<div id='doodads'></div>
 		<div id='players'></div>
@@ -21,12 +23,31 @@
 	<div id='side'>
 		<button onClick="auto()">Auto</button>
 		<button onClick="turn()">Next Hour</button>
+		<button onClick="infoDisplay()">Switch Info</button>
 		<span id='day'></span><span style='margin-left:10px' id='nums'></span>
+		<div id='messages'>
+			<table id='eventMsg'>
+				<thead>
+					<tr><th>Time</th><th></th></tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			<table id='deathMsg'>
+				<thead>
+					<tr><th>Time</th><th></th></tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
 		<div id='table'>
 			<input id='txt_spreadTerrain' value=3 style='width:40px'></input> Water & Mountain Spread<br>
 			<button onClick="generateTerrain()">Generate Terrain</button>
 			<button onClick="startGame()">Start Game</button><br>
-			<textarea id='charas' style='width:100%;height:calc(100% - 100px)'></textarea>
+			<button onClick="resetPlayers()">Clear Players</button>
+			<div id='cnt_players'>
+			</div>
 		</div>
 	</div>
 </body>
@@ -61,10 +82,22 @@ html,body{
 	height:50px;
 	object-fit:cover;
 }
+#messages table{
+	color:white;
+	font-size:20px;
+	display:inline-block;
+	width:49%;
+	vertical-align:top;
+}
+#messages img{
+	width:75px;
+	height:75px;
+	object-fit:cover;
+}
 #map{
 	display:inline-block;
 	vertical-align:top;
-	height:calc(100% - 40px);
+	height:calc(100% - 40px)!important;
 	margin:20px;
 	background:green;
 	position:relative;
@@ -120,10 +153,12 @@ html,body{
 .healthBar{
 	background:red;
 	bottom:5px;
+	border: 1px solid black;
 }
 .energyBar{
 	background:green;
 	bottom:0;
+	border: 1px solid black;
 }
 .kills{
 	left:0;
@@ -141,11 +176,19 @@ html,body{
 .weapon{
 	
 }
+.sexSword{
+	color:red;
+	font-weight:bold;
+}
 .sleep::before{
 	content:"😴";
 	vertical-align:top;
 	font-size:12px;
 	text-shadow:none;
+}
+.trapped{
+	color:brown;
+	font-style:italic;
 }
 .info{
 	display:inline-block;

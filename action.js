@@ -5,8 +5,16 @@ function awareOfCheck(tP){
 			let dist = hypD(oP.x - tP.x,oP.y - tP.y);
 			if(dist <= tP.sightRange){
 				//Units have a % of chance of being seen, increasing exponential up to their fight range
-				if(Math.pow(Math.random(),1/3) * (tP.sightRange - tP.fightRange) > dist - tP.fightRange)
-					tempArr.push(oP);
+				if(Math.pow(Math.random(),1/3) * (tP.sightRange - tP.fightRange) > dist - tP.fightRange){
+					let seen = false;
+					tP.opinions.forEach(function(oP2,index){
+						if(oP2[0] == oP)
+							seen = true;
+					});
+					if(!seen)
+						tP.opinions.push([oP,50]);
+					tempArr.push(oP)
+				}
 			}
 		}
 	});
@@ -31,9 +39,9 @@ function inRangeOfCheck(tP){
 					peaceChance += 75;
 				if(tP.moral == 'Chaotic')
 					fightChance += 100;
-				if(tP.weapon.name == "🗡️" || oP.weapon.name == "🗡️"){
-					peaceChance = 0;
-					fightChance = 1;
+				if(tP.weapon.name == "🗡"){
+					peaceChance = 1;
+					fightChance = 19;
 				}
 				//console.log("Fight check");
 				//console.log(tP);
@@ -47,16 +55,16 @@ function inRangeOfCheck(tP){
 	});
 	return tempArr;
 }
-function bombCheck(tP){
+function doodadCheck(tP){
 	doodads.forEach(function(tD,index){
 		let dist = hypD(tP.x - tD.x, tP.y - tD.y);
 		if(dist <= tD.triggerRange){
-			let blowUpChance = 1;
-			let blowUpNoChance = 3;
+			let triggerChance = 1;
+			let triggerNoChance = 3;
 			if(tD.owner == tP)
-				blowUpNoChance += 20;
-			if(roll([["yes",blowUpChance],["no",blowUpNoChance]]) == 'yes')
-				tD.blowUp();
+				triggerNoChance += 20;
+			if(roll([["yes",triggerChance],["no",triggerNoChance]]) == 'yes')
+				tD.trigger();
 		}
 	});
 }
@@ -68,9 +76,17 @@ function damage(tP,oP){
 	switch(tP.constructor.name){
 		case "Char":
 		dmg = rollDmg(tP);
+		if(dmg > oP.health)
+			dmg = oP.health;
 		oP.health -= dmg;
-		if(tP.weapon.name == "🗡️")
-			tP.health += dmg;
+		tP.exp += dmg;
+		if(tP.weapon.name == "🗡"){
+			console.log(tP.health + "before");
+			console.log(dmg);
+			tP.health += Math.pow(dmg,0.66);
+			tP.weapon.fightBonus += dmg/1000;
+			console.log(tP.health + "after");
+		}
 		if(tP.weapon){
 			tP.weapon.uses--;
 			if(tP.weapon.uses == 0)
@@ -81,41 +97,57 @@ function damage(tP,oP){
 			tP.lastAction = "fights " + oP.name;
 			let dist = hypD(oP.x - tP.x,oP.y - tP.y);
 			if(oP.awareOf.indexOf(tP)>=0){
+				//messages.push([tP," hurts <img src='" + oP.img + "'></img> for " + Math.round(dmg) + " dmg",day,hour]);
 				if(oP.fightRange + oP.fightRangeB >= dist){
 					let dmg = rollDmg(oP);
+					if(dmg > tP.health)
+						dmg = tP.health;
 					tP.health -= dmg;
-					if(oP.weapon.name == "🗡️")
-						oP.health += dmg;
-					if(tP.weapon){
-						tP.weapon.uses--;
-						if(tP.weapon.uses == 0)
-							tP.weapon = "";
+					oP.exp += dmg;
+					if(oP.weapon.name == "🗡"){
+						console.log(oP.health + "before");
+						console.log(dmg);
+						oP.health += Math.pow(dmg,0.66);
+						oP.weapon.fightBonus += dmg/1000;
+						console.log(oP.health + "after");
+					}
+					if(oP.weapon){
+						oP.weapon.uses--;
+						if(oP.weapon.uses == 0)
+							oP.weapon = "";
 					}
 					if(tP.health <= 0){
 						oP.lastAction = "kills " + tP.name;
 						oP.kills++;
 						tP.death = "killed by " + oP.name;
-						if(tP.weapon.name == "🗡" && Math.random() > 0.5){
+						//messages.push([tP," kills <img src='" + oP.img + "'></img>",day,hour]);
+						if(tP.weapon.name == "🗡" && Math.random() > 0.1){
 							oP.weapon = tP.weapon;
 							tP.weapon = "";
 						}
 					} else {
 						oP.lastAction = "fights " + tP.name;
+						if(oP.weapon)
+							oP.lastAction = "attacks " + tP.name + " with a " + oP.weapon.name;
+						//messages.push([oP," fights back against <img src='" + tP.img + "'></img> for " + Math.round(dmg) + " dmg",day,hour]);
 					}
 				} else {
+					//messages.push([oP," is out of range and can't fight back",day,hour]);
 					oP.lastAction = "is attacked out of range";
-					console.log(oP.fightRange + " " + oP.fightRangeB + " " + dist);
+					//console.log(oP.fightRange + " " + oP.fightRangeB + " " + dist);
 				}
 			} else {
 				if(oP.lastAction == "sleeping"){
+					//messages.push([tP," attacks <img src='" + oP.img + "'></img> in their sleep for " + Math.round(dmg) + " dmg",day,hour]);
 					oP.lastAction = "was attacked in their sleep";
 				} else {
+					//messages.push([tP," hurts <img src='" + oP.img + "'></img> for " + Math.round(dmg) + " dmg",day,hour]);
 					oP.lastAction = "is caught offguard";
 				}
 			}
 		} else {
 			tP.kills++;
-			if(oP.weapon.name == "🗡" && Math.random() > 0.5){
+			if(oP.weapon.name == "🗡" && Math.random() > 0.1){
 				tP.weapon = oP.weapon;
 				oP.weapon = "";
 			}
@@ -137,10 +169,31 @@ function damage(tP,oP){
 		oP.health -= dmg;
 		if(oP.health <= 0){
 			tP.owner.kills++;
-			if(oP == tP.owner){
-				oP.death = "blown up by their own bomb";
-			} else {
-				oP.death = "blown up by " + tP.owner.name;
+			switch(tP.name){
+				case "💣":
+					if(oP == tP.owner){
+						oP.death = "blown up by their own bomb";
+					} else {
+						oP.death = "blown up by " + tP.owner.name;
+					}
+					break;
+				case "🕳":
+					if(oP == tP.owner){
+						oP.death = "fell into their own trap";
+					} else {
+						oP.death = "fell into " + tP.owner.name + "'s trap";
+					}
+					break;
+			}
+		} else {
+			switch(tP.name){
+				case "🕳":
+					if(oP == tP.owner){
+						oP.lastAction = "fell into their own trap";
+					} else {
+						oP.lastAction = "fell into " + tP.owner.name + "'s trap";
+					}
+					break;
 			}
 		}
 		break;

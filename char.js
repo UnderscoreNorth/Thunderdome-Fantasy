@@ -5,18 +5,20 @@ class Char {
 		this.x = x;
 		this.y = y;
 		this.id = players.length;
-		this.health = 100;
+		
 		this.energy = 100;
 		this.maxEnergy = 100;
 		this.stamina = 100;
 		this.kills = 0;
-		this.killExp = 1.15;
+		this.killExp = 1.1;
+		this.exp = 0;
 		this.sightRange = 200;
 		this.sightRangeB = 0;
 		this.fightRange = 24;
 		this.fightRangeB = 0;
 		this.fightDmg = 25;
 		this.fightDmgB = 1.00;
+		this.visibility = 100;
 		this.currentAction = {};
 		this.awareOf = [];
 		this.finishedAction = true;
@@ -26,10 +28,17 @@ class Char {
 		this.fightDesire = 100;
 		this.peaceDesire = 100;
 		this.moral = roll([['Chaotic',1],['Neutral',2],['Lawful',1]]);
+		this.personality = rollSpecialP(this.name);
 		this.personality = roll([['Evil',1],['Neutral',2],['Good',1]]);
+		this.health = rollSpecialH(this.personality);
+		//roll([['Evil',1],['Neutral',2],['Good',1]])
 		this.traits = {};
 		moralNum[this.moral]++;
 		personalityNum[this.personality]++;
+		
+		this.alliance = {};
+		this.opinions = [];
+		this.recentlySeen = [];
 		
 		//Inventory
 		this.weapon = "";
@@ -37,7 +46,7 @@ class Char {
 	draw() {
 		let charDiv = $('#char_' + this.id);
 		if(!charDiv.length){
-			$('#players').append("<div id='char_" + this.id + "' class='char'><div class='charName'>" + this.name + "</div><div class='healthBar' style='margin-bottom:-10px'></div></div>");
+			$('#players').append("<div id='char_" + this.id + "' class='char'><div class='charName'>" + this.name + "<div class='charWeap'></div></div><div class='healthBar' style='margin-bottom:-10px'></div><div class='energyBar' style='margin-bottom:-10px'></div></div>");
 			charDiv = $('#char_' + this.id);
 			charDiv.css('background-image',"url(" + this.img + ")");
 			$('#table').append("<div class='container alive' id='tbl_" + this.id + "'><img src='" + this.img + "'></img><div style='position:absolute;width:50px;height:50px;z-index:1;top:0;left:0'><div class='healthBar'></div><div class='energyBar'></div><div class='kills'></div></div><div class='info'><div>" + this.moral.substring(0,1) + this.personality.substring(0,1) + " <b>" + this.name + "</b><span class='weapon'></span></div><div class='status'></div></div></div>");
@@ -57,8 +66,7 @@ class Char {
 			this.fightRangeB += this.weapon.rangeBonus;
 			this.fightDmgB *= this.weapon.fightBonus;
 		}
-		if(this.kills)
-			this.fightDmgB *= Math.pow(this.killExp,this.kills);
+		this.fightDmgB *= Math.pow(this.killExp,this.exp/100);
 		switch(terrainCheck(this.x,this.y)){
 			case "⛰️":
 				this.sightRangeB += 100;
@@ -66,6 +74,7 @@ class Char {
 			case "🌳":
 				this.sightRangeB -= 50;
 				this.fightRangeB -= 4;
+				this.visibility
 				break;
 			case "💧":
 				this.fightRangeB = 0;
@@ -86,9 +95,22 @@ class Char {
 					action();
 					return;
 				}
+			} else if (this.weapon.name == "🗡"){
+				this.health -= (this.weapon.fightBonus - 1.5 - this.kills/20);
+				if(this.health <= 0){
+					this.death = "Succumbed to SEX SWORD";
+					this.die();
+					action();
+					return;
+				}
+			}
+			if (this.weapon.name == "🗡"){
+				this.div.addClass("sexSword");
+			} else {
+				this.div.removeClass("sexSword");
 			}
 		}
-		if(this.lastAction == 'sleeping'){
+		if(this.lastAction == 'sleeping' || this.lastAction == 'trapped'){
 			this.awareOf = [];
 			this.inRangeOf = [];
 		} else {
@@ -113,7 +135,7 @@ class Char {
 		}
 		if(!this.plannedAction){
 			let options = [];
-			if(this.energy < Math.random()*25 + 25 && terrainCheck(this.x,this.y) != "💧"){
+			if((this.energy < Math.random()*25 + 25 || (Math.pow(100 - this.health,2) > Math.random() * 2500+ 2500 && !this.awareOf.length)) && terrainCheck(this.x,this.y) != "💧"){
 				this.plannedAction = "forage";
 			} else if(this.currentAction.name){
 				this.plannedAction = this.currentAction.name;
@@ -123,10 +145,12 @@ class Char {
 				let tP = this;
 				this.inRangeOf.forEach(function(oP,index){
 					if(oP.weapon.name == "🗡"){
-						sexSwordNearby = true;
-						tP.plannedTarget = oP;
-						tP.plannedAction = "fight";
-						oP.plannedAction = "fight";
+						if (Math.random() > 0.3){
+							sexSwordNearby = true;
+							tP.plannedTarget = oP;
+							tP.plannedAction = "fight";
+							oP.plannedAction = "fight";
+						}
 					}
 				});
 				if(!sexSwordNearby){
@@ -146,7 +170,7 @@ class Char {
 		action();
 	}
 	doAction(){
-		timerClick(this.name + " " + this.plannedAction);
+		//timerClick(this.name + " " + this.plannedAction);
 		this.div.removeClass("fighting");
 		if(this.health > 0){
 			//console.log(this.name + " " + this.plannedAction);
@@ -162,6 +186,10 @@ class Char {
 					break;
 				case "sleep":
 					this.sleep();
+					break;
+				case "trapped":
+					this.escapeTrap();
+					break;
 				default:
 					//console.log(this.name + " has no planned action");
 					break;
@@ -172,14 +200,35 @@ class Char {
 		} else {
 			this.div.find('.charName').removeClass('sleep');
 		}
-		timerClick("updateTable");
+		if(this.lastAction == 'tried to escape the trap'){
+			this.div.find('.charName').addClass('trapped');
+		} else {
+			this.div.find('.charName').removeClass('trapped');
+		}
+		//timerClick("updateTable");
 		
-		timerClick("updateTable");
-		timerClick("limitCheck");
+		//timerClick("updateTable");
+		//timerClick("limitCheck");
 		this.limitCheck();
-		timerClick("limitCheck");
+		//timerClick("limitCheck");
 		this.finishedAction = true;
-		timerClick(this.name + " " + this.plannedAction);
+		//timerClick(this.name + " " + this.plannedAction);
+	}
+	escapeTrap(){
+		console.log("Escape");
+
+		timerClick("escape");
+		if (Math.floor(Math.random() * 10) > 8){
+			this.lastAction = "escaped a trap";
+			this.currentAction = {};
+		} else {
+			this.energy -= 10;
+			this.health -= Math.floor(Math.random() * 5);
+			this.lastAction = "tried escape a trap";
+			if(this.health <= 0) 
+				this.death = "died escaping a trap";
+		};
+		timerClick("escape");
 	}
 	fight(){
 		this.calc();
@@ -215,34 +264,21 @@ class Char {
 					this.health += Math.floor(Math.random() * 5);
 					this.lastAction = "forage success";
 					if(!this.weapon){
-						let weaponOdds = [["🔪",10],["🔫",10],["🔱",10],["💣",5],["Nothing",500]];
+						let weaponOdds = [["🔪",30],["🔫",20],["🔱",25],["💣",5],["🕳",10],["🏹",20],["Nothing",500]];
 						if(sexSword){
-							weaponOdds.push(["🗡",5]);
+							weaponOdds.push(["🗡",1]);
 						}
-						switch(roll(weaponOdds)){
-							case "🔪":
-								this.weapon = new Item("🔪");
-								break;
-							case "🔫":
-								this.weapon = new Item("🔫");
-								break;
-							case "🔱":
-								this.weapon = new Item("🔱");
-								break;
-							case "💣":
-								this.weapon = new Item("💣");
-								break;
-							case "🗡":
-								this.weapon = new Item("🗡");
-								sexSword = false;
-								break;
-							default:
-								break;
-						}
+						this.weapon = new Item(roll(weaponOdds));
+						if(this.weapon.name == "Nothing")
+							this.weapon = "";
+						if(this.weapon.name == "🗡")
+							sexSword = false;
 						if(this.weapon){
 							this.lastAction = "found " + this.weapon.name;
-							if(this.weapon.name == "🗡")
+							if(this.weapon.name == "🗡"){
+								this.plannedAction = "Find sex sword";
 								this.lastAction = "<span style='color:red'>found SEX SWORD</span>";
+							}
 							this.calc();
 						}
 					}
@@ -259,7 +295,7 @@ class Char {
 		}
 	}
 	move(){
-		timerClick("move");
+		//timerClick("move");
 		if(this.currentAction.name != "move"){
 			this.currentAction = {};
 			let newX = 0;
@@ -267,7 +303,7 @@ class Char {
 			let sexSwordNearby = false;
 			let tP = this;
 			this.awareOf.forEach(function(oP,index){
-				if(oP.weapon.name == "🗡"){
+				if(oP.weapon.name == "🗡" && Math.random() > 0.1){
 					sexSwordNearby = true;
 					newX = oP.x;
 					newY = oP.y;
@@ -296,10 +332,10 @@ class Char {
 			this.currentAction.targetY = newY;
 		}
 		if(this.weapon){
-			if(this.weapon.name == "💣" && roll([['use',20],['notuse',100]]) == 'use'){
-				let tempBomb = new Doodad("💣",this.x,this.y,this);
-				tempBomb.draw();
-				doodads.push(tempBomb);
+			if((this.weapon.name == "💣" || this.weapon.name == "🕳") && roll([['use',20],['notuse',100]]) == 'use'){
+				let tempDoodad = new Doodad(this.weapon.name,this.x,this.y,this);
+				tempDoodad.draw();
+				doodads.push(tempDoodad);
 				this.weapon = "";
 			}
 		}
@@ -352,7 +388,7 @@ class Char {
 		charDiv.css({transform:"translate(" + targetX + "px," + targetY + "px)"},function(){
 			
 		});
-		bombCheck(this);
+		doodadCheck(this);
 		if(this.currentAction.targetX == this.x && this.currentAction.targetY == this.y)
 			this.currentAction = {};
 		this.energy -= Math.floor(Math.random()*5+2);
@@ -377,7 +413,7 @@ class Char {
 					break;
 			}
 		}
-		timerClick("move");
+		//timerClick("move");
 	}
 	sleep(){
 		if(this.currentAction.name != "sleep"){
@@ -428,7 +464,7 @@ class Char {
 				let tempBomb = new Doodad("💣",this.x,this.y,this);
 				tempBomb.draw();
 				doodads.push(tempBomb);
-				tempBomb.blowUp();
+				tempBomb.trigger();
 				this.weapon = "";
 			}
 		}
