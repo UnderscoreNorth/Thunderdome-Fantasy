@@ -14,7 +14,7 @@ front/src/lib/server/config.json
 front/static/*
 !front/static/robots.txt
 back/sqlite.db*
-front/src/lib/clientconfig.json
+front/src/lib/config.json
 back/logs
 back/node_modules
 back/config.json
