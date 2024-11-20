@@ -37,6 +37,24 @@ export const game: {
   msg: "",
   complete: false,
 };
+const p = [
+  {
+    name: "Liru",
+    img: "https://cdn.myanimelist.net/images/characters/4/54606.jpg",
+  },
+  {
+    name: "Pachira",
+    img: "https://cdn.myanimelist.net/images/characters/4/54605.jpg",
+  },
+  {
+    name: "Uma",
+    img: "https://cdn.myanimelist.net/images/characters/5/54607.jpg",
+  },
+  {
+    name: "Aiko",
+    img: "https://cdn.myanimelist.net/images/characters/2/54608.jpg",
+  },
+];
 export function generateGame(diameter: number) {
   game.ready = false;
   game.complete = false;
@@ -45,13 +63,18 @@ export function generateGame(diameter: number) {
   game.radius = diameter;
   game.map = new Terrain(diameter);
   game.msg = "";
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 72; i++) {
+    let ii = p[i % 4];
     let [x, y] = game.map.getRandomLandPoint();
     game.chars.push(
       new Char(
-        "Liru " + i.toString(),
-        "Group " + (i % 5),
-        "https://cdn.myanimelist.net/images/characters/4/54606.jpg",
+        ii.name +
+          " " +
+          Math.ceil(i / 4)
+            .toString()
+            .padStart(2, "0"),
+        "Group " + ii.name,
+        ii.img,
         x,
         y,
         "Neutral",
@@ -110,10 +133,12 @@ export function turn() {
     game.day++;
   }
   game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 25;
-  game.radius =
+  game.radius = Math.max(
+    5,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
-    game.diameter *
-    1.5;
+      game.diameter *
+      1.5
+  );
   console.log(game.radius);
   for (let i = game.map.land.length - 1; i >= 0; i--) {
     if (
