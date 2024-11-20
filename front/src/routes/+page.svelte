@@ -31,7 +31,7 @@
 						pinging = false;
 					});
 			}
-		}, 500);
+		}, 5000);
 	});
 	function getBackground(cell: TerrainType) {
 		let hue = 0;
