@@ -18,6 +18,7 @@ export const game: {
   maxPathFind: number;
   radius: number;
   msg: string;
+  complete: boolean;
 } = {
   chars: [],
   map: new Terrain(20),
@@ -34,9 +35,11 @@ export const game: {
   elapsedTime: 0,
   maxPathFind: 15,
   msg: "",
+  complete: false,
 };
 export function generateGame(diameter: number) {
   game.ready = false;
+  game.complete = false;
   game.chars = [];
   game.diameter = diameter;
   game.radius = diameter;
@@ -46,8 +49,8 @@ export function generateGame(diameter: number) {
     let [x, y] = game.map.getRandomLandPoint();
     game.chars.push(
       new Char(
-        i.toString(),
-        i % 2 == 0 ? "Even Gang" : "Odd Gang",
+        "Liru " + i.toString(),
+        "Group " + (i % 5),
         "https://cdn.myanimelist.net/images/characters/4/54606.jpg",
         x,
         y,
@@ -63,7 +66,20 @@ export function generateGame(diameter: number) {
 
 export function turn() {
   if (!game.ready) return;
-  if (game.chars.filter((i) => !i.dead).length <= 1) return;
+  let remainingGroups = new Set(
+    game.chars.filter((i) => !i.dead).map((i) => i.group)
+  ).size;
+  console.log("Remaining groups: ", remainingGroups);
+  if (remainingGroups <= 1) {
+    if (!game.complete) {
+      game.complete = true;
+      game.msg = "Game has finished, restarting in 15 minutes";
+      setTimeout(() => {
+        generateGame(200);
+      }, 900000);
+    }
+    return;
+  }
   let timeArr: Record<string, number> = {};
   let p = performance.now();
   game.ready = false;
@@ -117,19 +133,16 @@ export function turn() {
         !landString.includes(x + "," + y) &&
         game.map.array[x][y].elevation >= 0
       ) {
-        if (Math.random() > 0.9) game.map.array[x][y].icon = "🔥";
+        if (Math.random() > 0.9) {
+          game.map.array[x][y].icon = "🔥";
+          game.map.array[x][y].value = 0;
+        }
       }
     }
   }
   log("Burn Tiles");
   console.log(timeArr);
   game.ready = true;
-  if (game.chars.filter((i) => !i.dead).length <= 1) {
-    game.msg = "Game has finished, restarting in 15 minutes";
-    setTimeout(() => {
-      generateGame(200);
-    }, 900000);
-  }
   setTimeout(() => {
     turn();
   }, 1000);
@@ -158,6 +171,7 @@ export async function toJson() {
       day: game.day,
     },
     map,
+    islands: game.map.islands,
     center: { x: game.map.centerX, y: game.map.centerY },
     diameter: game.diameter,
     msg: game.msg,

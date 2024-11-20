@@ -14,6 +14,7 @@
 	let pinging = false;
 	let seed = 0;
 	let showKilled = true;
+	let islandNames: Array<{ name: string; x: number; y: number }> = [];
 
 	onMount(async () => {
 		seed = Math.random();
@@ -26,6 +27,33 @@
 					.then((r) => {
 						game = r;
 						centerRadius = ((15 - r.time.day) / 15) * r.diameter * 0.75;
+						islandNames = [];
+						for (let name in game.islands) {
+							if (name.indexOf('--') !== 0) {
+								let xT = 0;
+								let yT = 0;
+								let t = 0;
+								for (let xy of game.islands[name]) {
+									let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
+									xT += x;
+									yT += y;
+									t++;
+								}
+								let x = xT / t;
+								let y = yT / t;
+								let i = t % 2;
+								if (t > 2000) {
+									name += [' Island', ' Isle'][i];
+								} else if (t > 750) {
+									name += [' Holm', ' Key'][i];
+								} else if (t > 300) {
+									name += [' Haven', ' Enclave'][i];
+								} else {
+									name += [' Refuge', ' Islet'][i];
+								}
+								islandNames.push({ name, x, y });
+							}
+						}
 					})
 					.finally(() => {
 						pinging = false;
@@ -153,16 +181,15 @@
 					{/each}
 				</map>
 			{/key}
-			<div
-				class="gameBar"
-				style:display={'none'}
-				style:border={'solid 1px black'}
-				style:border-radius={'50%'}
-				style:width={unit * centerRadius * 2 + 'vh'}
-				style:height={unit * centerRadius * 2 + 'vh'}
-				style:left={unit * (GAME.center.x - centerRadius) + 'vh'}
-				style:top={unit * (GAME.center.y - centerRadius) + 'vh'}
-			/>
+			{#each islandNames as island}
+				<div
+					class="islandName"
+					style:top={unit * island.x + 'vh'}
+					style:left={unit * island.y + 'vh'}
+				>
+					<div>{island.name}</div>
+				</div>
+			{/each}
 			<div>
 				{#each GAME.chars as char (char.id)}
 					<char
@@ -308,5 +335,25 @@
 	}
 	#sidePanelChars table.dead {
 		opacity: 0.5;
+	}
+	.islandName {
+		position: absolute;
+		z-index: 1;
+		opacity: 0.8;
+		font-family: 'Footlight MT';
+		font-size: 1.5rem;
+		color: rgb(155, 140, 57);
+		font-weight: bold;
+		width: 1px;
+	}
+	.islandName div {
+		display: flex;
+		justify-content: center;
+		white-space: nowrap;
+		text-shadow:
+			-1px -1px 0 #000,
+			1px -1px 0 #000,
+			-1px 1px 0 #000,
+			1px 1px 0 #000;
 	}
 </style>

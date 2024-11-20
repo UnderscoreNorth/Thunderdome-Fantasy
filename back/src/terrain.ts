@@ -345,6 +345,48 @@ export class Terrain {
         }
       }
     }
+    let prefix = [
+      "Horai",
+      "Maccross",
+      "Chasm",
+      "Kuril",
+      "Nanpo",
+      "Ryukyu",
+      "Shikoku",
+      "Honshu",
+      "Uguu",
+      "Kanto",
+      "Kyuushuu",
+      "Okinawa",
+      "Cinnabar",
+      "Greed",
+      "Aincrad",
+      "The Lost",
+      `Roshi's `,
+      "Zevil",
+      "Boin",
+      "Taiga",
+      "Ami",
+      "Minori",
+    ];
+    for (let name in this.islands) {
+      let tiles = this.islands[name];
+      let newName = "";
+      if (tiles.length > 50) {
+        do {
+          shuffle(prefix);
+          newName = prefix[0];
+        } while (this.islands[newName] !== undefined);
+      } else {
+        newName = "--" + name;
+      }
+      for (const xy of tiles) {
+        let [x, y] = xy.split(",").map((i) => parseInt(i)) as [number, number];
+        this.array[x][y].groupID = newName;
+      }
+      this.islands[newName] = tiles;
+      delete this.islands[name];
+    }
     console.log("Number of islands: " + Object.values(this.islands).length);
     //Determining Lakes
     change = false;

@@ -2,6 +2,7 @@ export type Game = {
 	map: {
 		array: TerrainType[][];
 	};
+	islands: Record<string, string>;
 	center: {
 		x: number;
 		y: number;

@@ -324,11 +324,8 @@ export class Char {
           let [x, y] = xy.split(",").map((i) => parseInt(i));
           let isGoal = false;
           let value = game.map.array[x][y].value;
-          if (
-            value &&
-            !this.situation.been.has(xy) &&
-            this.equip.weapon == undefined
-          ) {
+          let loot = game.map.array[x][y].loot;
+          if (loot && value && this.equip.weapon == undefined) {
             isGoal = true;
           }
           if (isGoal)
@@ -444,12 +441,14 @@ export class Char {
         if (game.map.canSee(x, y, x2, y2)) {
           for (const char of game.chars.filter((i) => !i.dead)) {
             if (char !== this && char.x() == x2 && char.y() == y2) {
-              this.situation.awareOf.push(char);
-              if (
-                getD(this, char) <=
-                this.stats.combatRange + (this.equip?.weapon?.rangeBonus ?? 0)
-              ) {
-                this.situation.inRangeOf.push(char);
+              if (this.group !== char.group) {
+                this.situation.awareOf.push(char);
+                if (
+                  getD(this, char) <=
+                  this.stats.combatRange + (this.equip?.weapon?.rangeBonus ?? 0)
+                ) {
+                  this.situation.inRangeOf.push(char);
+                }
               }
             }
           }
