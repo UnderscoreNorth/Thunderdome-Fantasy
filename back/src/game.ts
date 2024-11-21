@@ -1,6 +1,6 @@
 import { Char } from "./entities/char";
 import { Terrain, TerrainType, TerrainUnseen } from "./terrain";
-import { hypD, shuffle } from "./utils";
+import { getTerrain, hypD, shuffle } from "./utils";
 
 export const game: {
   chars: Array<Char>;
@@ -19,6 +19,7 @@ export const game: {
   radius: number;
   msg: string;
   complete: boolean;
+  toBurn: Array<TerrainType>;
 } = {
   chars: [],
   map: new Terrain(20),
@@ -36,6 +37,7 @@ export const game: {
   maxPathFind: 15,
   msg: "",
   complete: false,
+  toBurn: [],
 };
 const p = [
   {
@@ -63,6 +65,7 @@ export function generateGame(diameter: number) {
   game.radius = diameter;
   game.map = new Terrain(diameter);
   game.msg = "";
+  game.toBurn = [];
   for (let i = 0; i < 72; i++) {
     let ii = p[i % 4];
     let [x, y] = game.map.getRandomLandPoint();
@@ -134,20 +137,26 @@ export function turn() {
   }
   game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 25;
   game.radius = Math.max(
-    5,
+    8,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
       game.diameter *
-      1.5
+      0.8
   );
+  console.log(game.radius);
   for (let i = game.map.land.length - 1; i >= 0; i--) {
     let x = game.map.land[i][0];
     let y = game.map.land[i][1];
     if (hypD(game.map.centerX - x, game.map.centerY - y) > game.radius) {
       game.map.land.splice(i, 1);
-      if (Math.random() > 0.9) {
-        game.map.array[x][y].icon = "🔥";
-        game.map.array[x][y].value = 0;
-      }
+      game.toBurn.push(getTerrain(x, y));
+    }
+  }
+  for (let i = game.toBurn.length - 1; i >= 0; i--) {
+    if (Math.random() > 0.9) {
+      game.toBurn[i].icon = "🔥";
+      game.toBurn[i].value = 0;
+      game.toBurn[i].glow = false;
+      game.toBurn.splice(i, 1);
     }
   }
   log("Land Reduce");

@@ -1,7 +1,6 @@
 import { game } from "../game";
 import { Action } from "../mechanics/actions";
 import { planAction } from "../mechanics/planAction";
-import { DmgType } from "../types";
 import {
   getD,
   getNearByDiag,
@@ -182,7 +181,7 @@ export class Char {
       this.plannedAction = undefined;
     }
     //perform planned action
-    if (this.stats.health > 0) {
+    if (this.stats.health > 0 && this.currentAction) {
       this.currentAction.perform();
     }
   }

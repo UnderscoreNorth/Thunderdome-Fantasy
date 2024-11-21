@@ -46,6 +46,7 @@
 	}
 	td {
 		font-size: small;
+		vertical-align: top;
 	}
 	.iconBar {
 		text-align: left;

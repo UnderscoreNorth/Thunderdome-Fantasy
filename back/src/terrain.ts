@@ -41,6 +41,7 @@ export class TerrainType {
   terrainCheck(char: Char) {
     if (this.icon == "🔥") {
       char.stats.health -= Math.random() * 5;
+      if (char.stats.health <= 0) char.die("perished in the flame");
       if (char.currentAction && char.currentAction.priority < 18) {
         let cX = game.map.centerX;
         let cY = game.map.centerY;
@@ -55,14 +56,16 @@ export class TerrainType {
           });
           for (let tile of tiles) {
             if (land.includes(tile.join(","))) {
-              found = true;
-              char.currentAction = new MoveAction({
-                player: char,
-                priority: 18,
-                data: {
-                  targetCoords: [tile[0], tile[1]],
-                },
-              });
+              if (!found) {
+                found = true;
+                char.currentAction = new MoveAction({
+                  player: char,
+                  priority: 18,
+                  data: {
+                    targetCoords: [tile[0], tile[1]],
+                  },
+                });
+              }
             }
           }
           i++;
@@ -218,7 +221,14 @@ export class Terrain {
             if (!this.array?.[startX]?.[startY]) break;
             let mountainHeight = roll_range(3, 5);
             this.array[startX][startY].elevation = mountainHeight - 1;
-            this.raiseGround(startX, startY, 1, 0.3, -1, mountainHeight);
+            this.raiseGround(
+              startX,
+              startY,
+              1,
+              roll_range(2, 4) / 10,
+              -1,
+              mountainHeight
+            );
             dir = changeDirection(
               dir,
               roll([
@@ -296,7 +306,7 @@ export class Terrain {
         for (let y = 0; y < diameter; y++) {
           let tile = this.array[x][y];
           if (tile.elevation >= 0) {
-            let nearby = this.getRing(x, y, 1);
+            let nearby = getNearby(x, y);
             let found = false;
             for (const [x2, y2] of nearby) {
               let nearbyTile = this.array?.[x2]?.[y2];
@@ -346,7 +356,7 @@ export class Terrain {
       change = false;
       for (let name in this.islands) {
         let tiles = this.islands[name];
-        if (tiles.length < 25) {
+        if (tiles.length < 50) {
           let newName = name;
           for (let xy of tiles) {
             let [x, y] = fromXY(xy);
@@ -755,25 +765,26 @@ export class Terrain {
           return res.split(",") as [number, number];
         }
       }
-      let attempt = 0;
+
+      let cX = game.map.centerX;
+      let cY = game.map.centerY;
+      let d = hypD(char.x() - cX, char.y() - cY);
+      let land = game.map.land.map((i) => i[0] + "," + i[1]);
+      let i = Math.min(Math.ceil(d), 4);
+      let found = false;
       do {
-        [x, y] = [
-          roll_range(
-            Math.max(3, char.x() - game.maxPathFind),
-            Math.min(game.diameter - 3, char.x() + game.maxPathFind)
-          ),
-          roll_range(
-            Math.max(3, char.y() - game.maxPathFind),
-            Math.min(game.diameter - 3, char.y() + game.maxPathFind)
-          ),
-        ];
-        attempt++;
-      } while (attempt < 25 && game.map.array?.[x]?.[y]?.elevation < 0);
-      if (attempt == 25)
-        [x, y] = [
-          this.centerX + roll_range(-1, 1),
-          this.centerY + roll_range(-1, 1),
-        ];
+        let tiles = game.map.getRing(char.x(), char.y(), i);
+        tiles.sort((a, b) => {
+          return hypD(a[0] - cX, a[1] - cY) - hypD(b[0] - cX, b[1] - cY);
+        });
+        for (let tile of tiles) {
+          if (land.includes(tile.join(","))) {
+            found = true;
+            [x, y] = tile;
+          }
+        }
+        i++;
+      } while (i <= d && !found);
       return [x, y];
     } else {
       let x = this.centerX;

@@ -49,11 +49,13 @@
 		let hue = 0;
 		let light = 40;
 		let saturation = 100;
+		let alpha = 1;
 		if (cell.icon == '🌳') {
-			hue = 112;
-			light = 35;
+			hue = 110 + ((cell.x + cell.y) % 3) * 12;
+			saturation = 100 - ((cell.x + cell.y) % 3) * 12;
+			light = 35 - ((cell.x + cell.y) % 3) * 2;
 		} else if (cell.icon == '🔥') {
-			hue = 0;
+			hue = Math.random() * 25;
 		} else if (cell.icon == 'cave') {
 			saturation = 0;
 			light = 20;
@@ -65,6 +67,7 @@
 			hue = 29;
 			light = 40;
 		}
+		light += ((cell.x + cell.y) % 3) * 0.5;
 		if ($selectedCharID !== undefined) {
 			let char = $game.chars.filter((x) => x.id == $selectedCharID)[0];
 			if (char == undefined) {
@@ -79,7 +82,7 @@
 				}
 			}
 		}
-		return `hsl(${hue},${saturation}%,${light}%)`;
+		return `hsla(${hue},${saturation}%,${light}%,${alpha})`;
 	}
 	let canvas: HTMLCanvasElement;
 	onMount(() => {

@@ -27,7 +27,7 @@ export class MoveAction extends Action {
     //get a coordinate to move to if not currently moving
     this.speedModifier = 1;
     if (this.priority == 2) this.speedModifier = 1.1;
-    if (this.priority == 18) this.speedModifier = 1.5;
+    if (this.priority > 2) this.speedModifier = 1.5;
     if ("targetCoords" in arg.data) {
       this.targetX = arg.data["targetCoords"][0];
       this.targetY = arg.data["targetCoords"][1];

@@ -1,6 +1,38 @@
 import { Char } from "../entities/char";
 import { getD } from "../utils";
-
+import { Action, ActionArg } from "./actions";
+export class FightAction extends Action {
+  target: Char;
+  constructor(
+    arg: ActionArg & {
+      data: {
+        target: Char;
+      };
+    }
+  ) {
+    super(arg);
+    this.name = "Fight";
+    this.target = arg.data.target;
+  }
+  perform(): void {
+    if (this.target.stats.health <= 0) {
+      this.player.statusMessage = "attacks the corpse of " + this.target.name;
+      return;
+    }
+    let dist = getD(this.player, this.target);
+    if (
+      this.player.stats.combatRange +
+        (this.player.equip?.weapon?.rangeBonus ?? 0) <
+      dist
+    ) {
+      console.log(65, dist);
+      this.player.statusMessage =
+        "tries to fight " + this.target.name + " but they escape";
+      return;
+    }
+    fight_target(this.player, this.target);
+  }
+}
 export function fight_target(tP: Char, oP: Char) {
   let atk = launch_attack(tP, oP);
   tP.statusMessage = atk + oP.name;

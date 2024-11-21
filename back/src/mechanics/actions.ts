@@ -1,9 +1,5 @@
 import { Char } from "../entities/char";
-import { getWeapon } from "../entities/weapon";
-import { game } from "../game";
-import { Terrain, TerrainType } from "../terrain";
-import { getD, getNearByDiag, getTerrain, hypD, roll_range } from "../utils";
-import { fight_target } from "./combat";
+import { roll_range } from "../utils";
 export type ActionArg = {
   player: Char;
   priority: number;
@@ -39,54 +35,25 @@ export class RestAction extends Action {
     this.name = "Rest";
   }
   perform() {
-    this.player.stats.energy += Math.random() * 5 + 5;
+    this.player.stats.energy += Math.random() * 1;
+    if (this.player.stats.energy < 0) this.player.stats.energy = 0.1;
+    this.player.stats.energy =
+      Math.sqrt(this.player.stats.energy / this.player.stats.maxEnergy) *
+      this.player.stats.maxEnergy;
     this.player.stats.health += Math.random() * 2;
     this.player.statusMessage = "rests";
   }
 }
-export class FightAction extends Action {
-  target: Char;
-  constructor(
-    arg: ActionArg & {
-      data: {
-        target: Char;
-      };
-    }
-  ) {
-    super(arg);
-    this.name = "Fight";
-    this.target = arg.data.target;
-  }
-  perform(): void {
-    if (this.target.stats.health <= 0) {
-      this.player.statusMessage = "attacks the corpse of " + this.target.name;
-      return;
-    }
-    let dist = getD(this.player, this.target);
-    if (
-      this.player.stats.combatRange +
-        (this.player.equip?.weapon?.rangeBonus ?? 0) <
-      dist
-    ) {
-      console.log(65, dist);
-      this.player.statusMessage =
-        "tries to fight " + this.target.name + " but they escape";
-      return;
-    }
-    fight_target(this.player, this.target);
-  }
-}
 
-export class SleepAction extends Action {
+export class SleepAction extends RestAction {
   constructor(arg: ActionArg) {
-    arg.turns = roll_range(24, 32);
     super(arg);
+    arg.turns = roll_range(24, 32);
     this.name = "Sleep";
   }
 
   perform() {
-    this.player.stats.health += Math.random() * 2;
-    this.player.stats.energy += Math.random() * 5 + 5;
+    super.perform();
     //wake up
     if (this.turns > 1) {
       // log_message(this.player.name + " continues sleeping");
