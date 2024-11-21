@@ -79,8 +79,10 @@
 		on:click={() => ($selectedIsland = $selectedIsland == island.i ? undefined : island.i)}
 		class="islandName"
 		style:font-size={island.s * 1.5 + 'vh'}
-		style:left={$view.zoom * (u * island.x + ($view.x + $view.xDiff) / 10) + 'vh'}
-		style:top={$view.zoom * (u * island.y + ($view.y + $view.yDiff) / 10) + 'vh'}
+		style:left={$view.zoom * (u * island.x + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+			'vh'}
+		style:top={$view.zoom * (u * island.y + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+			'vh'}
 	>
 		<div>{island.name}</div>
 	</div>
@@ -93,21 +95,31 @@
 			}}
 			class={[char.id == $selectedCharID ? 'sel' : '', char.death ? 'dead' : ''].join(' ')}
 			style:background-image={`url(${char.img})`}
-			style:left={$view.zoom * (u * (char.situation.x - 1) + ($view.x + $view.xDiff) / 10) + 'vh'}
-			style:top={$view.zoom * (u * (char.situation.y - 1) + ($view.y + $view.yDiff) / 10) + 'vh'}
-			style:height={u * 3 + 'vh'}
+			style:left={$view.zoom *
+				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+				'vh'}
+			style:top={$view.zoom *
+				(u * (char.situation.y - 1) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+				'vh'}
+			style:height={u * 3 * $view.zoom + 'vh'}
 		/>
 		<div
 			class="gameBar"
-			style:left={$view.zoom * (u * (char.situation.x - 1) + ($view.x + $view.xDiff) / 10) + 'vh'}
-			style:top={$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / 10) + 'vh'}
+			style:left={$view.zoom *
+				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+				'vh'}
+			style:top={$view.zoom *
+				(u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+				'vh'}
 			style:width={u * (char.stats.health / char.stats.maxHealth) * 3 + 'vh'}
 			style:background={'red'}
 		/>
 		<div
 			class="gameBar"
-			style:left={$view.zoom * (u * (char.situation.x - 1) + ($view.x + $view.xDiff) / 10) + 'vh'}
-			style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / 10)}vh + 3px)`}
+			style:left={$view.zoom *
+				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+				'vh'}
+			style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}vh + 3px)`}
 			style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 + 'vh'}
 			style:background={'green'}
 		/>

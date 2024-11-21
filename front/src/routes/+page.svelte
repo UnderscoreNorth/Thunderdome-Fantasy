@@ -114,6 +114,7 @@
 		grid-template-rows: 1.2rem auto auto;
 		height: 100vh;
 		overflow-y: hidden;
+		z-index: 2;
 	}
 	#sidePanelChars {
 		display: flex;

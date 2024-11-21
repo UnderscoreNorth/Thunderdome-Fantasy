@@ -90,9 +90,15 @@
 	let canvas: HTMLCanvasElement;
 	let cached = new Image();
 	let ctx: CanvasRenderingContext2D | null;
+	let cameraC: HTMLCanvasElement;
+	let cameraCtx: CanvasRenderingContext2D | null;
 	onMount(() => {
-		canvas = document.getElementById('canvas') as HTMLCanvasElement;
+		cameraC = document.getElementById('canvas') as HTMLCanvasElement;
+		canvas = document.createElement('canvas');
+		canvas.width = $view.renderSize;
+		canvas.height = $view.renderSize;
 		ctx = canvas.getContext('2d');
+		cameraCtx = cameraC.getContext('2d');
 		requestAnimationFrame(draw);
 		game.subscribe(() => {
 			requestAnimationFrame(draw);
@@ -101,7 +107,7 @@
 			requestAnimationFrame(draw);
 		});
 		view.subscribe(() => {
-			requestAnimationFrame(draw);
+			requestAnimationFrame(camera);
 		});
 		selectedIsland.subscribe(() => {
 			requestAnimationFrame(draw);
@@ -110,16 +116,13 @@
 	function draw() {
 		//timeArr = {};
 		//p = performance.now();
-		let u = 1000 / unit;
+		console.log('d');
+		let u = $view.renderSize / unit;
 		if (!ctx) return;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = 'rgb(5,17,46)';
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		ctx.scale($view.zoom, $view.zoom);
-		let x = $view.x + $view.xDiff;
-		let y = $view.y + $view.yDiff;
-		ctx.translate(x, y);
+		//ctx.scale($view.zoom, $view.zoom);
+		//ctx.translate(x, y);
 		ctx.shadowColor = 'white';
 		ctx.shadowBlur = 0;
 		//ctx.setTransform($view.zoom, 0, 0, $view.zoom, $view.x + $view.xDiff, $view.y + $view.yDiff);
@@ -144,7 +147,7 @@
 			if (char !== undefined && char.path !== undefined) {
 				for (const [x, y] of char.path) {
 					ctx.strokeStyle = 'red';
-					ctx.lineWidth = 10;
+					ctx.lineWidth = 5 / $view.zoom;
 					ctx.strokeRect(x * u, y * u, u, u);
 				}
 			}
@@ -159,8 +162,8 @@
 				let y = (cell.y - (scale - 1)) * u;
 				ctx.fillStyle = getColor(cell);
 				ctx.setTransform(1, 0, 0, 1, 0, 0);
-				ctx.scale($view.zoom, $view.zoom);
-				ctx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
+				//ctx.scale($view.zoom, $view.zoom);
+				//ctx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
 				ctx.translate(x, y);
 				ctx.scale((u / 512) * scale, (u / 512) * scale);
 				let p = new Path2D(svg.path);
@@ -172,13 +175,10 @@
 				ctx.fill(p);
 			}
 		}
-		//log('doodads');
-		//console.log(timeArr);
-		//cached.src = canvas.toDataURL('image/png');
-		//ctx.setTransform(1, 0, 0, 1, 0, 0);
-		//ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-		//ctx.drawImage(cached, 0, 0);
+		cached.src = canvas.toDataURL('image/png');
+		setTimeout(() => {
+			camera();
+		}, 1);
 	}
 	function log(name: string) {
 		let time = Math.round(performance.now() - p);
@@ -186,12 +186,13 @@
 		p = performance.now();
 	}
 	function camera() {
-		if (!ctx) return;
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		//ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.scale($view.zoom, $view.zoom);
-		ctx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
-		ctx.drawImage(cached, 0, 0);
+		if (!cameraCtx) return;
+		cameraCtx.setTransform(1, 0, 0, 1, 0, 0);
+		cameraCtx.fillStyle = $selectedCharID !== undefined ? 'rgb(2,5,14)' : 'rgb(5,17,46)';
+		cameraCtx.fillRect(0, 0, canvas.width, canvas.height);
+		cameraCtx.scale($view.zoom, $view.zoom);
+		cameraCtx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
+		cameraCtx.drawImage(cached, 0, 0);
 	}
 	function scroll(e: WheelEvent) {
 		let zoom = $view.zoom;
@@ -227,7 +228,13 @@
 		drag = true;
 		startX = e.offsetX;
 		startY = e.offsetY;
-		console.log('dS');
+
+		let names = Array.from(document.getElementsByClassName('islandName'))
+			.concat(Array.from(document.getElementsByClassName('gameBar')))
+			.concat(Array.from(document.getElementsByTagName('char'))) as HTMLDivElement[];
+		for (const name of names) {
+			name.style.pointerEvents = 'none';
+		}
 	}
 	function dragMove(e: MouseEvent) {
 		let dragSpeed = unit * 2 * Math.pow($view.zoom, 2);
@@ -248,6 +255,12 @@
 				v.yDiff = 0;
 				return v;
 			});
+			let names = Array.from(document.getElementsByClassName('islandName'))
+				.concat(Array.from(document.getElementsByClassName('gameBar')))
+				.concat(Array.from(document.getElementsByTagName('char'))) as HTMLDivElement[];
+			for (const name of names) {
+				name.style.pointerEvents = 'auto';
+			}
 		}
 	}
 </script>
@@ -259,8 +272,9 @@
 	on:mousemove={dragMove}
 	on:mousedown={dragStart}
 	on:mouseup={dragEnd}
+	on:mouseleave={dragEnd}
 >
-	<canvas id="canvas" height="1000" width="1000"> </canvas>
+	<canvas id="canvas" height={$view.renderSize} width={$view.renderSize}> </canvas>
 </div>
 
 <style>
