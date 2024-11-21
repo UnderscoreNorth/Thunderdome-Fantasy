@@ -1,6 +1,6 @@
 import { Char } from "./entities/char";
 import { game } from "./game";
-import { MoveAction } from "./mechanics/actions";
+import { MoveAction } from "./mechanics/move";
 import {
   changeDirection,
   directions,
@@ -185,7 +185,7 @@ export class Terrain {
       let startY = roll_range(5, diameter - 5);
       let startingLimit = roll_range(8, 10) / 10;
       //Land Lift
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 3; i++) {
         this.lifted = [];
 
         this.raiseGround(
@@ -374,7 +374,7 @@ export class Terrain {
 
     let prefix = [
       "Horai",
-      "Maccross",
+      "Macross",
       "Chasm",
       "Kuril",
       "Nanpo",

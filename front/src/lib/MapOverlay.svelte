@@ -41,7 +41,7 @@
 					} else if (t > 750) {
 						type = [
 							[' Holm', ' Key', `'s Holm'`, ' Key'],
-							[`L'Atoll `, `Le le Récif de la `, 'El Escollo de ', 'El Escollo']
+							[`L'Atoll `, `Le le Récif de la `, 'El Escollo de ', 'El Escollo ']
 						][i][i2];
 						s = 1.5;
 					} else if (t > 300) {

@@ -2,14 +2,9 @@ import { Char } from "../entities/char";
 import { game } from "../game";
 import { TerrainType } from "../terrain";
 import { fromXY, getTerrain, roll } from "../utils";
-import {
-  FightAction,
-  FollowAction,
-  MoveAction,
-  RestAction,
-  SleepAction,
-} from "./actions";
+import { FightAction, RestAction, SleepAction } from "./actions";
 import { LootAction } from "./loot";
+import { FollowAction, MoveAction } from "./move";
 
 export function planAction(char: Char) {
   if (char.stats.energy <= 0) {
@@ -39,7 +34,7 @@ export function planAction(char: Char) {
       [
         {
           goal: TerrainType | Char;
-          type: "fight" | "loot";
+          type: "fight" | "loot" | "escape";
         },
         number
       ]
@@ -55,6 +50,14 @@ export function planAction(char: Char) {
         { goal: oChar, type: "fight" },
         Math.round(200 - oChar.stats.health),
       ]);
+      goals.push([
+        { goal: oChar, type: "escape" },
+        Math.round(
+          oChar.stats.health /
+            char.stats.health /
+            (char.stats.health / char.stats.maxHealth)
+        ),
+      ]);
     }
     if (
       (!char.currentAction || char.currentAction.priority < 3) &&
@@ -65,9 +68,13 @@ export function planAction(char: Char) {
         char.setPlannedAction(FightAction, 3, {
           target: goal.goal,
         });
-      } else {
+      } else if (goal.type == "loot") {
         char.setPlannedAction(LootAction, 3, {
           target: goal.goal,
+        });
+      } else if (goal.type == "escape") {
+        char.setPlannedAction(MoveAction, 3, {
+          targetCoords: game.map.getRandomLandPoint(char),
         });
       }
     } else if (!char.currentAction || char.currentAction.priority < 2) {
@@ -121,21 +128,8 @@ export function planAction(char: Char) {
     }
 
     if (!char.currentAction) {
-      let [x, y] = [0, 0];
-      let attempt = 0;
-      let numWaterTiles = 0;
-      do {
-        attempt++;
-        [x, y] = game.map.getRandomLandPoint();
-        numWaterTiles = game.map.countWaterTilesInPath(
-          char.x(),
-          char.y(),
-          x,
-          y
-        );
-      } while (attempt < 10 && numWaterTiles > 3);
       char.setPlannedAction(MoveAction, 1, {
-        targetCoords: game.map.getRandomLandPoint(this),
+        targetCoords: game.map.getRandomLandPoint(char),
       });
     }
   }

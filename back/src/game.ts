@@ -98,7 +98,7 @@ export function turn() {
       game.complete = true;
       game.msg = "Game has finished, restarting in 15 minutes";
       setTimeout(() => {
-        generateGame(200);
+        generateGame(250);
       }, 900000);
     }
     return;
@@ -139,33 +139,18 @@ export function turn() {
       game.diameter *
       1.5
   );
-  console.log(game.radius);
   for (let i = game.map.land.length - 1; i >= 0; i--) {
-    if (
-      hypD(
-        game.map.centerX - game.map.land[i][0],
-        game.map.centerY - game.map.land[i][1]
-      ) > game.radius
-    ) {
+    let x = game.map.land[i][0];
+    let y = game.map.land[i][1];
+    if (hypD(game.map.centerX - x, game.map.centerY - y) > game.radius) {
       game.map.land.splice(i, 1);
-    }
-  }
-  log("Land Reduce");
-  let landString = game.map.land.map((x) => x[0] + "," + x[1]);
-  for (let x in game.map.array) {
-    for (let y in game.map.array) {
-      if (
-        !landString.includes(x + "," + y) &&
-        game.map.array[x][y].elevation >= 0
-      ) {
-        if (Math.random() > 0.9) {
-          game.map.array[x][y].icon = "🔥";
-          game.map.array[x][y].value = 0;
-        }
+      if (Math.random() > 0.9) {
+        game.map.array[x][y].icon = "🔥";
+        game.map.array[x][y].value = 0;
       }
     }
   }
-  log("Burn Tiles");
+  log("Land Reduce");
   console.log(timeArr);
   game.ready = true;
   function log(name: string) {
@@ -176,7 +161,7 @@ export function turn() {
 }
 export async function toJson() {
   while (!game.ready) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
   let map = JSON.parse(JSON.stringify(game.map.array)) as Array<
     Array<TerrainType>

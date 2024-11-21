@@ -130,6 +130,7 @@
 					for (const [x, y] of char.path) {
 						ctx.setTransform(1, 0, 0, 1, 0, 0);
 						ctx.strokeStyle = 'red';
+						ctx.lineWidth = 10;
 						ctx.strokeRect(x * u, y * u, u, u);
 					}
 				}
@@ -154,6 +155,7 @@
 					ctx.fill(p);
 				}
 			}
+			ctx.shadowBlur = 0;
 		}
 	}
 	function scroll(e: WheelEvent) {
