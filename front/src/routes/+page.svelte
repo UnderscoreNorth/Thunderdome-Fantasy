@@ -107,8 +107,6 @@
 	#sidePanel {
 		flex-grow: 1;
 		background: #202020;
-		color: white;
-		font-family: 'Helvetica';
 		display: grid;
 		grid-template-columns: auto;
 		grid-template-rows: 1.2rem auto auto;

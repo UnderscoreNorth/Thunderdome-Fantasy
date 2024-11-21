@@ -12,7 +12,7 @@
 	}}
 >
 	<div class="avatar" style:background-image={`url(${char.img})`}></div>
-	<table>
+	<table class="stats">
 		<tr>
 			<td>{Math.max(Math.round(char.stats.health), 0)}/{char.stats.maxHealth}</td>
 			<th><Icon icon="health" /></th><td>Health</td>
@@ -34,7 +34,7 @@
 			<th><Icon icon={'combatxp'} /></th><td>Combat EXP</td>
 		</tr>
 	</table>
-	<table>
+	<table class="general">
 		<tr>
 			<th>{char.name}</th>
 		</tr>
@@ -87,10 +87,14 @@
 		padding: 5px;
 		font-size: 2vh;
 	}
-	tr > *:nth-child(1) {
+	.stats tr > *:nth-child(1) {
 		text-align: right;
 	}
-	tr > *:nth-child(4) {
+	.stats tr > *:nth-child(2) {
+		width: 1rem;
+		color: rgb(190, 123, 0);
+	}
+	.general tr {
 		text-align: left;
 	}
 	.log {

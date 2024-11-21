@@ -7,6 +7,8 @@
 	let h: number;
 	let timeArr: Record<string, number> = {};
 	let p = 0;
+	let time = 0;
+	let diff = 0;
 	function getBackground(cell: TerrainType) {
 		let hue = 0;
 		let light = cell.elevation * 10 + 10;
@@ -45,7 +47,10 @@
 					light = 3;
 				}
 			}
+		} else {
+			light *= diff;
 		}
+		if (light < 3) light = 3;
 		return `hsl(${hue},${saturation}%,${light}%)`;
 	}
 	function getColor(cell: TerrainType) {
@@ -84,7 +89,10 @@
 					light = 3;
 				}
 			}
+		} else {
+			light *= diff;
 		}
+		if (light < 3) light = 3;
 		return `hsla(${hue},${saturation}%,${light}%,${alpha})`;
 	}
 	let canvas: HTMLCanvasElement;
@@ -116,7 +124,9 @@
 	function draw() {
 		//timeArr = {};
 		//p = performance.now();
-		console.log('d');
+		time = $game.time.hour * 60 + $game.time.minute;
+		diff = 1 - Math.pow(Math.abs(time - 840) / 720, 4);
+		if (diff < 0.6) diff = 0.6;
 		let u = $view.renderSize / unit;
 		if (!ctx) return;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -221,7 +231,8 @@
 	function doubleClick(e: MouseEvent) {
 		let { zoom, x, y } = $view;
 		zoom += 0.08;
-		//view.set({ x, y, zoom });
+		if (zoom < 1) zoom = 1;
+		if (zoom > 2) zoom = 2;
 		$view.zoom = zoom;
 	}
 	function dragStart(e: MouseEvent) {
@@ -237,7 +248,7 @@
 		}
 	}
 	function dragMove(e: MouseEvent) {
-		let dragSpeed = unit * 2 * Math.pow($view.zoom, 2);
+		let dragSpeed = unit * 5 * $view.zoom;
 		if (drag) {
 			xDiff = ((e.offsetX - startX) / h) * dragSpeed;
 			$view.xDiff = xDiff;

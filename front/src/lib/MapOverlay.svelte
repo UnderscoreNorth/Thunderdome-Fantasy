@@ -155,7 +155,6 @@
 		position: absolute;
 		z-index: 1;
 		opacity: 0.8;
-		font-family: Arial, Helvetica, sans-serif;
 		color: rgb(155, 140, 57);
 		font-weight: bold;
 		width: 1px;

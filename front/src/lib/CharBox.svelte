@@ -51,6 +51,7 @@
 	.iconBar {
 		text-align: left;
 		font-size: 1rem;
+		color: rgb(190, 123, 0);
 	}
 	:global(.iconBar svg) {
 		height: 0.75rem !important;
