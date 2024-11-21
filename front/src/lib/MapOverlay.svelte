@@ -111,7 +111,7 @@
 			style:top={$view.zoom *
 				(u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
 				'vh'}
-			style:width={u * (char.stats.health / char.stats.maxHealth) * 3 + 'vh'}
+			style:width={u * (char.stats.health / char.stats.maxHealth) * 3 * $view.zoom + 'vh'}
 			style:background={'red'}
 		/>
 		<div
@@ -120,7 +120,7 @@
 				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
 				'vh'}
 			style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}vh + 3px)`}
-			style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 + 'vh'}
+			style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 * $view.zoom + 'vh'}
 			style:background={'green'}
 		/>
 	{/each}
