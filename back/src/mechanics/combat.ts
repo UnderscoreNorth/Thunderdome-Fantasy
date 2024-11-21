@@ -69,14 +69,22 @@ function launch_attack(attacker: Char, defender: Char) {
     defBonus = defender.equip.armor.defBonus;
   }
   if (attacker.stats.combatRange + rngBonus >= getD(attacker, defender)) {
-    if (attacker.equip.weapon) attacker.useWeapon();
+    let combatType = "melee";
+    if (attacker.equip.weapon) {
+      combatType = attacker.equip.weapon.type;
+      attacker.useWeapon();
+    }
     if (defender.equip.armor) defender.useArmor();
+
     if (Math.random() > 1 - accBonus) {
       let dmg =
-        Math.pow(Math.random(), 1 / (attacker.stats.combatExp / 100 + 1)) *
+        Math.pow(
+          Math.random(),
+          1 / (attacker.stats[combatType + "Exp"] / 100 + 1)
+        ) *
         (10 + dmgBonus);
       defender.stats.health -= dmg * defBonus;
-      attacker.stats.combatExp += (dmg * xpBonus) / 3;
+      attacker.stats[combatType + "Exp"] += (dmg * xpBonus) / 3;
       defender.stats.maxHealth += Math.round(Math.random());
       attacker.stats.energy -= Math.random() * 10 * xpBonus;
       return "attacks ";

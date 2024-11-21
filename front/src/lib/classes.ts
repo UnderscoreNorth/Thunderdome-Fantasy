@@ -38,7 +38,9 @@ export type Char = {
 		intimidation: number;
 		moveSpeed: number;
 		kills: number;
-		combatExp: number;
+		meleeExp: number;
+		rangeExp: number;
+		magicExp: number;
 		survivalExp: number;
 	};
 	situation: {

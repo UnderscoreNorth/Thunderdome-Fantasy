@@ -16,6 +16,9 @@
 	import GiNinjaArmor from 'svelte-icons/gi/GiNinjaArmor.svelte';
 	import GiLeatherArmor from 'svelte-icons/gi/GiLeatherArmor.svelte';
 	import GiShoulderArmor from 'svelte-icons/gi/GiShoulderArmor.svelte';
+	import GiSpellBook from 'svelte-icons/gi/GiSpellBook.svelte';
+	import GiWizardStaff from 'svelte-icons/gi/GiWizardStaff.svelte';
+	import GiBullseye from 'svelte-icons/gi/GiBullseye.svelte';
 	export let icon: string;
 </script>
 
@@ -31,7 +34,7 @@
 	<GiRun />
 {:else if icon == 'kills'}
 	<GiSkullCrossedBones />
-{:else if icon == 'combatxp'}
+{:else if icon == 'meleeExp'}
 	<GiSwordBrandish />
 {:else if icon == '🌳'}
 	<FaTree />
@@ -53,4 +56,10 @@
 	<GiLeatherArmor />
 {:else if icon == 'plateArmor'}
 	<GiShoulderArmor />
+{:else if icon == 'magic'}
+	<GiSpellBook />
+{:else if icon == 'magicExp'}
+	<GiWizardStaff />
+{:else if icon == 'rangeExp'}
+	<GiBullseye />
 {/if}

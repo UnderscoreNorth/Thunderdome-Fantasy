@@ -1,5 +1,5 @@
 import { game } from "../game";
-import { Action } from "../mechanics/actions";
+import { Action, ActionArg } from "../mechanics/actions";
 import { planAction } from "../mechanics/planAction";
 import {
   getD,
@@ -27,7 +27,9 @@ export class Char {
     intimidation: number;
     moveSpeed: number;
     kills: number;
-    combatExp: number;
+    meleeExp: number;
+    rangeExp: number;
+    magicExp: number;
     survivalExp: number;
     combatRange: number;
   };
@@ -88,7 +90,9 @@ export class Char {
       sightRange: 5,
       intimidation: 0,
       kills: 0,
-      combatExp: 0,
+      meleeExp: 0,
+      magicExp: 0,
+      rangeExp: 0,
       survivalExp: 0,
       moveSpeed: 0.95 + Math.random() * 0.1,
       combatRange: 2,

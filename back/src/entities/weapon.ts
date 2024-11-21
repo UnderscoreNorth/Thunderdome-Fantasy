@@ -1,3 +1,4 @@
+import { Action, ActionArg } from "../mechanics/actions";
 import { roll } from "../utils";
 import { Item } from "./items";
 
@@ -8,7 +9,9 @@ export type Wpn = {
   dmgBonus?: number;
   uses?: [number, number];
   value: number;
-  type: "melee" | "ranged";
+  type: "melee" | "range" | "magic";
+  planValue?: number;
+  action?: typeof Action;
 };
 export function getWeapon(value: number) {
   let weaponOdds: Array<[Wpn, number]> = [
@@ -24,7 +27,7 @@ export function getWeapon(value: number) {
         uses: [12, 12],
         value: 1,
         accBonus: 0.7,
-        type: "ranged",
+        type: "range",
       },
       20,
     ],
@@ -35,8 +38,36 @@ export function getWeapon(value: number) {
         uses: [5, 5],
         value: 2,
         dmgBonus: 15,
-        type: "ranged",
+        type: "range",
         accBonus: 0.9,
+      },
+      5,
+    ],
+    [
+      {
+        name: "magic",
+        rangeBonus: 2,
+        dmgBonus: 0,
+        uses: [999, 999],
+        accBonus: 0.6,
+        value: 5,
+        type: "magic",
+        planValue: 5,
+        action: class PracticeMagic extends Action {
+          constructor(arg: ActionArg) {
+            super(arg);
+            this.name = "Practice Magic";
+          }
+          perform() {
+            this.player.stats.energy -= Math.random() * 20;
+            this.player.stats.magicExp += Math.random() * 20;
+            this.player.statusMessage = "practices magic";
+            this.player.equip.weapon.rangeBonus += Math.random();
+            if (this.player.equip.weapon.rangeBonus > 10)
+              this.player.equip.weapon.rangeBonus = 10;
+            this.player.equip.weapon.accBonus += 0.02;
+          }
+        },
       },
       1,
     ],
@@ -47,12 +78,16 @@ export function getWeapon(value: number) {
   return new Weapon(roll(weaponOdds));
 }
 export class Weapon extends Item {
+  type: "melee" | "range" | "magic";
+  planValue: number;
+  action?: typeof Action;
   constructor(a: Wpn) {
     super(a);
-    if (a.type == "melee") {
-      this.xpBonus = 1.3;
-    } else if (a.type == "ranged") {
-      this.xpBonus = 0.5;
-    }
+    this.type = a.type;
+    this.planValue = a.planValue ?? 0;
+    this.action = a.action;
+  }
+  planAction() {
+    return this.planValue;
   }
 }

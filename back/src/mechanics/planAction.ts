@@ -23,7 +23,8 @@ export function planAction(char: Char) {
           | "move"
           | "sleep"
           | "follow"
-          | "rest";
+          | "rest"
+          | "weaponAction";
       },
       number
     ]
@@ -63,19 +64,17 @@ export function planAction(char: Char) {
           Math.round((200 - oChar.stats.health) / 10),
         ]);
     }
+    if (char.equip.weapon && char.equip.weapon.action) {
+      goals.push([
+        {
+          goal: char,
+          type: "weaponAction",
+        },
+        char.equip.weapon.planAction(),
+      ]);
+    }
   }
-  if (
-    (((game.hour >= 22 || game.hour < 5) &&
-      char.lastAction instanceof SleepAction == false) ||
-      char.situation.lastSlept > 24 * 4) &&
-    getTerrain(char.x(), char.y()).elevation >= 0
-  ) {
-    goals.push([
-      { type: "sleep", goal: char },
-      Math.pow(char.situation.lastSlept / 4 - 16, 2) * 10,
-    ]);
-  }
-  if (!char.currentAction || char.currentAction.priority < 3) {
+  if (char.currentAction?.priority < 3) {
     if (
       getTerrain(char.x(), char.y()).loot &&
       (char.equip.weapon == undefined || char.equip.armor == undefined)
@@ -98,7 +97,16 @@ export function planAction(char: Char) {
       ]);
     }
   }
-  if (!char.currentAction) {
+  if (
+    (((game.hour >= 22 || game.hour < 5) &&
+      char.lastAction instanceof SleepAction == false) ||
+      char.situation.lastSlept > 24 * 4) &&
+    getTerrain(char.x(), char.y()).elevation >= 0
+  ) {
+    goals.push([
+      { type: "sleep", goal: char },
+      Math.pow(char.situation.lastSlept / 4 - 16, 2) * 10,
+    ]);
   }
   //choose new action
   let goal = roll(goals);
@@ -127,6 +135,11 @@ export function planAction(char: Char) {
       });
     } else if (goal.type == "rest") {
       char.setPlannedAction(RestAction, 3);
+    } else if (
+      goal.type == "weaponAction" &&
+      char.equip?.weapon?.action !== undefined
+    ) {
+      char.setPlannedAction(char.equip.weapon.action, 3);
     }
   }
 }

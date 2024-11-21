@@ -29,10 +29,24 @@
 			<td>{char.stats.kills}</td>
 			<th><Icon icon={'kills'} /></th><td>Kills</td>
 		</tr>
-		<tr>
-			<td>{Math.round(char.stats.combatExp * 10) / 10}</td>
-			<th><Icon icon={'combatxp'} /></th><td>Combat EXP</td>
-		</tr>
+		{#if char.stats.meleeExp}
+			<tr>
+				<td>{Math.round(char.stats.meleeExp * 10) / 10}</td>
+				<th><Icon icon={'meleeExp'} /></th><td>Melee</td>
+			</tr>
+		{/if}
+		{#if char.stats.rangeExp}
+			<tr>
+				<td>{Math.round(char.stats.rangeExp * 10) / 10}</td>
+				<th><Icon icon={'rangeExp'} /></th><td>Range</td>
+			</tr>
+		{/if}
+		{#if char.stats.magicExp}
+			<tr>
+				<td>{Math.round(char.stats.magicExp * 10) / 10}</td>
+				<th><Icon icon={'magicExp'} /></th><td>Magic</td>
+			</tr>
+		{/if}
 	</table>
 	<table class="general">
 		<tr>
