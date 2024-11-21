@@ -2,8 +2,11 @@
 	import { onMount } from 'svelte';
 	import { type TerrainType, selectedCharID, game, view, selectedIsland } from './classes';
 	import { iconSvg } from './icon';
+	import { claim_text } from 'svelte/internal';
 	export let unit: number;
 	let h: number;
+	let timeArr: Record<string, number> = {};
+	let p = 0;
 	function getBackground(cell: TerrainType) {
 		let hue = 0;
 		let light = cell.elevation * 10 + 10;
@@ -85,87 +88,115 @@
 		return `hsla(${hue},${saturation}%,${light}%,${alpha})`;
 	}
 	let canvas: HTMLCanvasElement;
+	let cached = new Image();
+	let ctx: CanvasRenderingContext2D | null;
 	onMount(() => {
 		canvas = document.getElementById('canvas') as HTMLCanvasElement;
-		draw();
+		ctx = canvas.getContext('2d');
+		requestAnimationFrame(draw);
 		game.subscribe(() => {
-			draw();
+			requestAnimationFrame(draw);
 		});
 		selectedCharID.subscribe(() => {
-			draw();
+			requestAnimationFrame(draw);
 		});
 		view.subscribe(() => {
-			draw();
+			requestAnimationFrame(draw);
 		});
 		selectedIsland.subscribe(() => {
-			draw();
+			requestAnimationFrame(draw);
 		});
 	});
 	function draw() {
-		let u = (10000 / unit) * $view.zoom;
-		let offSet = 10000 - 10000 / $view.zoom;
-		let xO = offSet * ($view.x / 100);
-		let yO = offSet * ($view.y / 100);
-		if (canvas.getContext) {
-			let ctx = canvas.getContext('2d');
-			if (!ctx) return;
-			ctx.clearRect(0, 0, 1000, 1000);
-			ctx.shadowColor = 'white';
-			ctx.shadowBlur = 0;
-			for (let row of $game.map) {
-				for (let cell of row) {
-					ctx.setTransform(1, 0, 0, 1, 0, 0);
-					ctx.fillStyle = getBackground(cell);
-					ctx.fillRect(cell.x * u - xO, cell.y * u - yO, u, u);
-				}
+		//timeArr = {};
+		//p = performance.now();
+		let u = 1000 / unit;
+		if (!ctx) return;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = 'rgb(5,17,46)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.scale($view.zoom, $view.zoom);
+		let x = $view.x + $view.xDiff;
+		let y = $view.y + $view.yDiff;
+		ctx.translate(x, y);
+		ctx.shadowColor = 'white';
+		ctx.shadowBlur = 0;
+		//ctx.setTransform($view.zoom, 0, 0, $view.zoom, $view.x + $view.xDiff, $view.y + $view.yDiff);
+		//log('reset');
+		for (let row of $game.map) {
+			for (let cell of row) {
+				ctx.fillStyle = getBackground(cell);
+				ctx.fillRect(cell.x * u, cell.y * u, u + 1, u + 1);
 			}
-			if ($selectedIsland !== undefined) {
-				for (const xy of $game.islands[$selectedIsland]) {
-					let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
-					ctx.setTransform(1, 0, 0, 1, 0, 0);
-					ctx.fillStyle = 'rgba(255,255,255,0.2)';
-					ctx.fillRect(x * u - xO, y * u - yO, u, u);
-				}
-			}
-			if ($selectedCharID !== undefined) {
-				let char = $game.chars.filter((x) => x.id == $selectedCharID)[0];
-				if (char !== undefined && char.path !== undefined) {
-					for (const [x, y] of char.path) {
-						ctx.setTransform(1, 0, 0, 1, 0, 0);
-						ctx.strokeStyle = 'red';
-						ctx.lineWidth = 10;
-						ctx.strokeRect(x * u, y * u, u, u);
-					}
-				}
-			}
-			for (let row of $game.map) {
-				for (let cell of row) {
-					if (!cell.icon || iconSvg[cell.icon] == undefined) continue;
-					let svg = iconSvg[cell.icon];
-					let scale = svg?.scale ?? 1;
-					let x = (cell.x - (scale - 1) / 2) * u;
-					let y = (cell.y - (scale - 1)) * u;
-					ctx.setTransform(1, 0, 0, 1, 0, 0);
-					ctx.fillStyle = getColor(cell);
-					ctx.translate(x, y);
-					ctx.scale((u / 512) * scale, (u / 512) * scale);
-					let p = new Path2D(svg.path);
-					if (cell.glow) {
-						ctx.shadowBlur = 10;
-					} else {
-						ctx.shadowBlur = 0;
-					}
-					ctx.fill(p);
-				}
-			}
-			ctx.shadowBlur = 0;
 		}
+		//log('tiles');
+		if ($selectedIsland !== undefined) {
+			for (const xy of $game.islands[$selectedIsland]) {
+				let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
+				ctx.fillStyle = 'rgba(255,255,255,0.2)';
+				ctx.fillRect(x * u, y * u, u, u);
+			}
+		}
+		//log('island');
+		if ($selectedCharID !== undefined) {
+			let char = $game.chars.filter((x) => x.id == $selectedCharID)[0];
+			if (char !== undefined && char.path !== undefined) {
+				for (const [x, y] of char.path) {
+					ctx.strokeStyle = 'red';
+					ctx.lineWidth = 10;
+					ctx.strokeRect(x * u, y * u, u, u);
+				}
+			}
+		}
+		//log('player path');
+		for (let row of $game.map) {
+			for (let cell of row) {
+				if (!cell.icon || iconSvg[cell.icon] == undefined) continue;
+				let svg = iconSvg[cell.icon];
+				let scale = svg?.scale ?? 1;
+				let x = (cell.x - (scale - 1) / 2) * u;
+				let y = (cell.y - (scale - 1)) * u;
+				ctx.fillStyle = getColor(cell);
+				ctx.setTransform(1, 0, 0, 1, 0, 0);
+				ctx.scale($view.zoom, $view.zoom);
+				ctx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
+				ctx.translate(x, y);
+				ctx.scale((u / 512) * scale, (u / 512) * scale);
+				let p = new Path2D(svg.path);
+				if (cell.glow) {
+					ctx.shadowBlur = 10;
+				} else {
+					ctx.shadowBlur = 0;
+				}
+				ctx.fill(p);
+			}
+		}
+		//log('doodads');
+		//console.log(timeArr);
+		//cached.src = canvas.toDataURL('image/png');
+		//ctx.setTransform(1, 0, 0, 1, 0, 0);
+		//ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		//ctx.drawImage(cached, 0, 0);
+	}
+	function log(name: string) {
+		let time = Math.round(performance.now() - p);
+		timeArr[name] = time;
+		p = performance.now();
+	}
+	function camera() {
+		if (!ctx) return;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		//ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.scale($view.zoom, $view.zoom);
+		ctx.translate($view.x + $view.xDiff, $view.y + $view.yDiff);
+		ctx.drawImage(cached, 0, 0);
 	}
 	function scroll(e: WheelEvent) {
 		let zoom = $view.zoom;
 		let dir = e.deltaY > 0 ? 1 : -1;
 		zoom -= e.deltaY / 1000;
-		console.log(e.deltaY);
 		if (zoom < 1) zoom = 1;
 		if (zoom > 2) zoom = 2;
 		let x = $view.x - (Math.ceil((e.offsetX / h) * 3) - 2) * 10 * dir;
@@ -174,16 +205,62 @@
 		if (x > 100) x = 100;
 		if (y < 0) y = 0;
 		if (y > 100) y = 100;
+		$view.zoom = zoom;
 		/*view.set({
 			x,
 			y,
 			zoom
 		});*/
 	}
+	let drag = false;
+	let startX = 0;
+	let startY = 0;
+	let xDiff = 0;
+	let yDiff = 0;
+	function doubleClick(e: MouseEvent) {
+		let { zoom, x, y } = $view;
+		zoom += 0.08;
+		//view.set({ x, y, zoom });
+		$view.zoom = zoom;
+	}
+	function dragStart(e: MouseEvent) {
+		drag = true;
+		startX = e.offsetX;
+		startY = e.offsetY;
+		console.log('dS');
+	}
+	function dragMove(e: MouseEvent) {
+		let dragSpeed = unit * 2 * Math.pow($view.zoom, 2);
+		if (drag) {
+			xDiff = ((e.offsetX - startX) / h) * dragSpeed;
+			$view.xDiff = xDiff;
+			yDiff = ((e.offsetY - startY) / h) * dragSpeed;
+			$view.yDiff = yDiff;
+		}
+	}
+	function dragEnd(e: MouseEvent) {
+		if (drag) {
+			drag = false;
+			view.update((v) => {
+				v.x += v.xDiff;
+				v.y += v.yDiff;
+				v.xDiff = 0;
+				v.yDiff = 0;
+				return v;
+			});
+		}
+	}
 </script>
 
-<div bind:clientHeight={h} on:wheel={scroll}>
-	<canvas id="canvas" height="10000" width="10000"> </canvas>
+<div
+	bind:clientHeight={h}
+	on:wheel={scroll}
+	on:dblclick={doubleClick}
+	on:mousemove={dragMove}
+	on:mousedown={dragStart}
+	on:mouseup={dragEnd}
+>
+	<canvas id="canvas" height="1000" width="1000"> </canvas>
 </div>
 
 <style>
