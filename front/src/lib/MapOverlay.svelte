@@ -79,7 +79,7 @@
 	<div
 		on:click={() => ($selectedIsland = $selectedIsland == island.i ? undefined : island.i)}
 		class="islandName"
-		style:font-size={island.s + 'rem'}
+		style:font-size={island.s * 1.5 + 'vh'}
 		style:left={u * island.x + 'vh'}
 		style:top={u * island.y + 'vh'}
 	>
