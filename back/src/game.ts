@@ -168,9 +168,6 @@ export function turn() {
   log("Burn Tiles");
   console.log(timeArr);
   game.ready = true;
-  setTimeout(() => {
-    turn();
-  }, 1000);
   function log(name: string) {
     let time = Math.round(performance.now() - p);
     timeArr[name] = time;
@@ -227,6 +224,11 @@ export async function toJson() {
           equip: {
             weapon: x.equip?.weapon
               ? Object.assign(x.equip.weapon, {
+                  owner: x.name,
+                })
+              : undefined,
+            armor: x.equip?.armor
+              ? Object.assign(x.equip.armor, {
                   owner: x.name,
                 })
               : undefined,

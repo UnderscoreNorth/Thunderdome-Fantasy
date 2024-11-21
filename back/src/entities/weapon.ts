@@ -1,5 +1,5 @@
-import { roll, roll_range } from "../utils";
-import { Char } from "./char";
+import { roll } from "../utils";
+import { Item } from "./items";
 
 export type Wpn = {
   name: string;
@@ -46,30 +46,13 @@ export function getWeapon(value: number) {
   }
   return new Weapon(roll(weaponOdds));
 }
-export class Weapon {
-  name: string;
-  rangeBonus: number;
-  dmgBonus: number;
-  uses: number;
-  value: number;
-  accBonus: number;
-  owner: Char;
-  xpBonus: number;
+export class Weapon extends Item {
   constructor(a: Wpn) {
-    this.name = a.name;
-    this.rangeBonus = a.rangeBonus ?? 0;
-    this.dmgBonus = a.dmgBonus ?? 0;
-    this.uses = a.uses ? roll_range(a.uses[0], a.uses[1]) : 1;
-    this.value = a.value;
-    this.accBonus = a.accBonus ?? 1;
-    this.xpBonus = 1;
+    super(a);
     if (a.type == "melee") {
       this.xpBonus = 1.3;
     } else if (a.type == "ranged") {
       this.xpBonus = 0.5;
     }
-  }
-  use() {
-    this.uses--;
   }
 }

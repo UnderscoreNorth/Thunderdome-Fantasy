@@ -2,9 +2,15 @@
 	import { type Char } from '$lib/classes';
 	import Icon from './Icon.svelte';
 	export let char: Char;
+	export let selectChar: Function;
 </script>
 
-<div class="container">
+<div
+	class="container"
+	on:click={() => {
+		selectChar(char.id);
+	}}
+>
 	<div class="avatar" style:background-image={`url(${char.img})`}></div>
 	<table>
 		<tr>
@@ -29,6 +35,11 @@
 		<tr>
 			<td>{char.stats.kills}</td>
 			<th><Icon icon={'kills'} /></th><td>Kills</td>
+			<td
+				>{#if char.equip.armor?.name}
+					<Icon icon={char.equip.armor?.name + 'Armor'} /> Uses: {char.equip.armor.uses}
+				{/if}</td
+			>
 		</tr>
 		<tr>
 			<td>{Math.round(char.stats.combatExp * 10) / 10}</td>

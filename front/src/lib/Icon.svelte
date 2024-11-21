@@ -13,6 +13,9 @@
 	import GiHut from 'svelte-icons/gi/GiHut.svelte';
 	import GiAbstract038 from 'svelte-icons/gi/GiAbstract038.svelte';
 	import GiWinchesterRifle from 'svelte-icons/gi/GiWinchesterRifle.svelte';
+	import GiNinjaArmor from 'svelte-icons/gi/GiNinjaArmor.svelte';
+	import GiLeatherArmor from 'svelte-icons/gi/GiLeatherArmor.svelte';
+	import GiShoulderArmor from 'svelte-icons/gi/GiShoulderArmor.svelte';
 	export let icon: string;
 </script>
 
@@ -44,4 +47,10 @@
 	<GiAbstract038 />
 {:else if icon == 'sniper'}
 	<GiWinchesterRifle />
+{:else if icon == 'clothArmor'}
+	<GiNinjaArmor />
+{:else if icon == 'leatherArmor'}
+	<GiLeatherArmor />
+{:else if icon == 'plateArmor'}
+	<GiShoulderArmor />
 {/if}

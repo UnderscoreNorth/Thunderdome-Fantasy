@@ -25,6 +25,9 @@
 			{#if char.equip.weapon?.name}
 				<Icon icon={char.equip.weapon.name} />
 			{/if}
+			{#if char.equip.armor?.name}
+				<Icon icon={char.equip.armor.name + 'Armor'} />
+			{/if}
 		</div>
 	</td>
 </tr>

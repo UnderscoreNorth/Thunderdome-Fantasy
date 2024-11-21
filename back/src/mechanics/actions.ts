@@ -336,31 +336,6 @@ export class FollowAction extends MoveAction {
       this.player.statusMessage = "following " + this.target.name;
   }
 }
-export class LootAction extends Action {
-  tile: TerrainType;
-  constructor(
-    arg: Action & {
-      data: {
-        target: TerrainType;
-      };
-    }
-  ) {
-    super(arg);
-    this.name = "loot";
-    this.tile = arg.data.target;
-  }
-  perform(): void {
-    console.log("looting");
-    if (this.tile.loot) {
-      this.tile.loot--;
-      this.player.equip.weapon = getWeapon(this.tile.value);
-      this.player.equip.weapon.owner = this.player;
-      this.player.statusMessage = "equips " + this.player.equip.weapon.name;
-    } else {
-      this.player.statusMessage = "found nothing in " + this.tile.icon;
-    }
-  }
-}
 export class SleepAction extends Action {
   constructor(arg: ActionArg) {
     arg.turns = roll_range(24, 32);

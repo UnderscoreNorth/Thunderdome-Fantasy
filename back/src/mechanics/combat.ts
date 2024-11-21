@@ -8,7 +8,7 @@ export function fight_target(tP: Char, oP: Char) {
     tP.stats.kills++;
     tP.statusMessage = "kills " + oP.name;
     oP.statusMessage = "killed by " + tP.name;
-    oP.death = "killed by " + tP.name;
+    oP.die("killed by " + tP.name);
   } else {
     let atk = launch_attack(oP, tP);
     if (tP.stats.health <= 0) {
@@ -16,7 +16,7 @@ export function fight_target(tP: Char, oP: Char) {
       oP.statusMessage = "kills " + tP.name;
       tP.statusMessage = "killed by " + oP.name + "'s counterattack";
       // pushMessage(oP, oP.name + " fights back and kills " + tP.name);
-      tP.death = "killed by " + oP.name + "'s counterattack";
+      tP.die("killed by " + oP.name + "'s counterattack");
     }
   }
 }
@@ -26,19 +26,24 @@ function launch_attack(attacker: Char, defender: Char) {
   let accBonus = 1;
   let rngBonus = 0;
   let xpBonus = 1;
+  let defBonus = 1;
   if (attacker.equip.weapon) {
     dmgBonus = attacker.equip.weapon.dmgBonus;
     accBonus *= attacker.equip.weapon.accBonus;
     rngBonus = attacker.equip.weapon.rangeBonus;
     xpBonus = attacker.equip.weapon.xpBonus;
   }
+  if (defender.equip.armor) {
+    defBonus = defender.equip.armor.defBonus;
+  }
   if (attacker.stats.combatRange + rngBonus >= getD(attacker, defender)) {
     if (attacker.equip.weapon) attacker.useWeapon();
+    if (defender.equip.armor) defender.useArmor();
     if (Math.random() > 1 - accBonus) {
       let dmg =
         Math.pow(Math.random(), 1 / (attacker.stats.combatExp / 100 + 1)) *
         (10 + dmgBonus);
-      defender.stats.health -= dmg;
+      defender.stats.health -= dmg * defBonus;
       attacker.stats.combatExp += (dmg * xpBonus) / 3;
       defender.stats.maxHealth += Math.round(Math.random());
       attacker.stats.energy -= Math.random() * 10 * xpBonus;

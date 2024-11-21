@@ -4,8 +4,10 @@ import { MoveAction } from "./mechanics/actions";
 import {
   changeDirection,
   directions,
+  fromXY,
   getNearby,
   getNearByDiag,
+  getTerrain,
   hypD,
   roll,
   roll_range,
@@ -69,8 +71,7 @@ export class TerrainType {
     }
     if (this.elevation == -3) {
       if (Math.random() > 0.99) {
-        char.death = "drowned";
-        char.die();
+        char.die("drowned");
       }
     }
   }
@@ -289,19 +290,13 @@ export class Terrain {
 
     //Determining Islands
     let change = false;
-    let loop = 0;
     do {
-      loop++;
       change = false;
       for (let x = 0; x < diameter; x++) {
         for (let y = 0; y < diameter; y++) {
           let tile = this.array[x][y];
           if (tile.elevation >= 0) {
-            let nearby = [
-              [x - 1, y],
-              [x - 1, y + 1],
-              [x, y + 1],
-            ];
+            let nearby = this.getRing(x, y, 1);
             let found = false;
             for (const [x2, y2] of nearby) {
               let nearbyTile = this.array?.[x2]?.[y2];
@@ -345,6 +340,38 @@ export class Terrain {
         }
       }
     }
+    //Grouping smaller islands
+    change = false;
+    do {
+      change = false;
+      for (let name in this.islands) {
+        let tiles = this.islands[name];
+        if (tiles.length < 25) {
+          let newName = name;
+          for (let xy of tiles) {
+            let [x, y] = fromXY(xy);
+            let nearBy = this.getRing(x, y, 2);
+            nearBy = nearBy.concat(this.getRing(x, y, 3));
+            for (const [x2, y2] of nearBy) {
+              let oTile = this.array[x2][y2];
+              if (oTile && oTile.elevation >= 0 && oTile.groupID !== name) {
+                newName = oTile.groupID;
+              }
+            }
+          }
+          if (newName !== name) {
+            change = true;
+            for (let xy of tiles) {
+              let [x, y] = fromXY(xy);
+              this.array[x][y].groupID = newName;
+              this.islands[newName].push(xy);
+            }
+            delete this.islands[name];
+          }
+        }
+      }
+    } while (change);
+
     let prefix = [
       "Horai",
       "Maccross",
@@ -369,19 +396,24 @@ export class Terrain {
       "Ami",
       "Minori",
     ];
+    shuffle(prefix);
     for (let name in this.islands) {
       let tiles = this.islands[name];
       let newName = "";
       if (tiles.length > 50) {
         do {
-          shuffle(prefix);
-          newName = prefix[0];
+          if (prefix.length) {
+            newName = prefix[0];
+            prefix.shift();
+          } else {
+            newName = name;
+          }
         } while (this.islands[newName] !== undefined);
       } else {
         newName = "--" + name;
       }
       for (const xy of tiles) {
-        let [x, y] = xy.split(",").map((i) => parseInt(i)) as [number, number];
+        let [x, y] = fromXY(xy);
         this.array[x][y].groupID = newName;
       }
       this.islands[newName] = tiles;
@@ -390,9 +422,7 @@ export class Terrain {
     console.log("Number of islands: " + Object.values(this.islands).length);
     //Determining Lakes
     change = false;
-    loop = 0;
     do {
-      loop++;
       change = false;
       for (let x = 0; x < diameter; x++) {
         for (let y = 0; y < diameter; y++) {
@@ -509,7 +539,7 @@ export class Terrain {
     //Locations
     this.populateLocations(
       "cave",
-      [2, 3],
+      [2, 4],
       3,
       Math.ceil(Math.pow(this.diameter, 2) / 100),
       1,
@@ -715,10 +745,7 @@ export class Terrain {
       if (tiles !== undefined) {
         let options: Array<[any, number]> = [["leave", 20]];
         for (let xy of tiles) {
-          let [x2, y2] = xy.split(",").map((i) => parseInt(i)) as [
-            number,
-            number
-          ];
+          let [x2, y2] = fromXY(xy);
           if (Math.abs(char.x() - x2) > game.maxPathFind) continue;
           if (Math.abs(char.y() - y2) > game.maxPathFind) continue;
           if (!char.situation.been.has(xy)) options.push([xy, 1]);

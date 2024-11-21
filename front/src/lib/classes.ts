@@ -1,7 +1,6 @@
+import { writable } from 'svelte/store';
 export type Game = {
-	map: {
-		array: TerrainType[][];
-	};
+	map: TerrainType[][];
 	islands: Record<string, string>;
 	center: {
 		x: number;
@@ -22,6 +21,7 @@ export type TerrainType = {
 	icon: string;
 	type: string;
 	elevation: number;
+	glow: boolean;
 };
 export type Char = {
 	name: string;
@@ -56,8 +56,20 @@ export type Char = {
 			name: string;
 			uses: number;
 		};
+		armor?: {
+			name: string;
+			uses: number;
+		};
 	};
 	death: string;
 	path?: Array<[number, number]>;
 	log: string[];
 };
+export const game = writable<Game>(undefined);
+export const selectedCharID = writable<number | undefined>(undefined);
+export const selectedIsland = writable<string | undefined>(undefined);
+export const view = writable<{ zoom: number; x: number; y: number }>({
+	zoom: 1,
+	x: 0,
+	y: 0
+});

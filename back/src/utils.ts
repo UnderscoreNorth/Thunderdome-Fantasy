@@ -170,3 +170,6 @@ export function getD(o1: Char | TerrainType, o2: Char | TerrainType) {
   let y2 = o2 instanceof Char ? o2.situation.y : o2.y;
   return hypD(x1 - x2, y1 - y2);
 }
+export function fromXY(xy: string) {
+  return xy.split(",").map((i) => parseInt(i)) as [number, number];
+}

@@ -1,28 +1,15 @@
 import { game } from "../game";
-import {
-  Action,
-  FightAction,
-  FollowAction,
-  LootAction,
-  MoveAction,
-  RestAction,
-  SleepAction,
-} from "../mechanics/actions";
-import { TerrainType } from "../terrain";
+import { Action } from "../mechanics/actions";
+import { planAction } from "../mechanics/planAction";
 import { DmgType } from "../types";
 import {
   getD,
-  getNearby,
   getNearByDiag,
   getTerrain,
-  hypD,
-  log_message,
   roll,
-  roll_range,
-  safeBoundsCheck,
-  shuffle,
   updatePlayerDistTable,
 } from "../utils";
+import { Armor } from "./armor";
 import { Weapon } from "./weapon";
 
 export class Char {
@@ -68,6 +55,7 @@ export class Char {
   };
   equip: {
     weapon?: Weapon;
+    armor?: Armor;
   };
   plannedAction?: Action;
   currentAction?: Action;
@@ -149,27 +137,6 @@ export class Char {
       .filter((x) => x.d <= dist)
       .map((x) => x.c);
   }
-
-  take_damage(dmg: number, source: Char, dmg_type: DmgType, fightMsg = {}) {
-    /*this.apply_all_effects("takeDmg", {
-      source: source,
-      damage: dmg,
-      dmg_type: dmg_type,
-      fightMsg: fightMsg,
-    });*/
-    this.stats.health -= dmg;
-  }
-
-  heal_damage(dmg: number, source: Char, dmg_type: DmgType, fightMsg = {}) {
-    /*this.apply_all_effects("healDmg", {
-      source: source,
-      damage: dmg,
-      dmg_type: dmg_type,
-      fightMsg: fightMsg,
-    });*/
-    this.stats.health += dmg;
-  }
-
   //action planning
   setPlannedAction(
     action: typeof Action,
@@ -184,55 +151,6 @@ export class Char {
       this.plannedAction = new action({ player: this, priority, data });
     }
   }
-
-  //check for aware and in range players
-  /*checkSurroundingPlayers() {
-    this.calc_bonuses();
-
-    //action check update
-    if (this.lastActionState == "sleeping") {
-      this.unaware = true;
-      this.incapacitated = true;
-    }
-
-    let tP = this;
-    this.awareOf = [];
-    if (!this.unaware) {
-      players.forEach(function (oP) {
-        if (oP == tP) return;
-        let aware = awareOfCheck(tP, oP);
-        if (aware) {
-          //apply effects from those in sight
-          oP.apply_all_effects("opAware", { opponent: tP });
-          tP.awareOf.push(oP);
-        }
-      });
-    }
-    this.inRangeOf = [];
-    if (!this.incapacitated) {
-      this.inRangeOf = this.nearbyPlayers(tP.fightRange + tP.fightRangeB);
-      this.inRangeOf.forEach(function (oP) {
-        oP.apply_all_effects("opInRange", { opponent: tP });
-      });
-    }
-
-    this.opinionUpdate();
-    this.danger_score = this.get_danger_level();
-
-    this.follow_target = "";
-    this.fight_target = "";
-    this.steal_target = "";
-    this.ally_target = "";
-    if (this.awareOf.length > 0) {
-      this.follow_target = this.choose_follow_target();
-      this.fight_target = this.choose_fight_target();
-      this.steal_target = this.choose_steal_target();
-      this.ally_target = this.choose_alliance_target();
-    }
-
-    this.apply_all_effects("surroundingCheck");
-  }*/
-
   turnStart() {
     if (this.dead) return;
     if (getTerrain(this.x(), this.y())) {
@@ -247,134 +165,7 @@ export class Char {
   }
   planAction() {
     if (this.dead) return;
-    if (this.stats.energy <= 0) {
-      // this.setPlannedAction("rest", 20);
-      this.setPlannedAction(RestAction, 20);
-      log_message("rest");
-    }
-    let options = [];
-    //move
-    options.push(["move", 100]);
-    if (
-      (((game.hour >= 22 || game.hour < 5) &&
-        this.lastAction instanceof SleepAction == false) ||
-        this.situation.lastSlept > 24 * 4) &&
-      getTerrain(this.x(), this.y()).elevation >= 0
-    ) {
-      options.push([
-        "sleep",
-        100 * Math.pow(this.situation.lastSlept / 4 - 16, 2),
-      ]);
-    }
-    //choose new action
-    let action_option = roll(options);
-    if (action_option == "sleep") {
-      this.setPlannedAction(SleepAction, 3);
-    } else {
-      let goals: Array<
-        [
-          {
-            goal: TerrainType | Char;
-            type: "fight" | "loot";
-          },
-          number
-        ]
-      > = [];
-      if (
-        getTerrain(this.x(), this.y()).loot &&
-        this.equip.weapon == undefined
-      ) {
-        console.log("At loot site");
-        goals.push([
-          { goal: getTerrain(this.x(), this.y()), type: "loot" },
-          500,
-        ]);
-      }
-      for (const char of this.situation.inRangeOf) {
-        goals.push([
-          { goal: char, type: "fight" },
-          Math.round(200 - char.stats.health),
-        ]);
-      }
-      if (
-        (!this.currentAction || this.currentAction.priority < 3) &&
-        goals.length
-      ) {
-        let goal = roll(goals);
-        if (goal.type == "fight") {
-          this.setPlannedAction(FightAction, 3, {
-            target: goal.goal,
-          });
-        } else {
-          this.setPlannedAction(LootAction, 3, {
-            target: goal.goal,
-          });
-        }
-      } else if (!this.currentAction || this.currentAction.priority < 2) {
-        let goals: Array<
-          [
-            {
-              goal: TerrainType | Char;
-              type: "move" | "follow";
-            },
-            number
-          ]
-        > = [];
-        for (let xy of Array.from(this.situation.vision)) {
-          let [x, y] = xy.split(",").map((i) => parseInt(i));
-          let isGoal = false;
-          let value = game.map.array[x][y].value;
-          let loot = game.map.array[x][y].loot;
-          if (loot && value && this.equip.weapon == undefined) {
-            isGoal = true;
-          }
-          if (isGoal)
-            goals.push([
-              {
-                goal: getTerrain(x, y),
-                type: "move",
-              },
-              value * 10,
-            ]);
-        }
-        for (const char of this.situation.awareOf) {
-          if (!this.situation.inRangeOf.includes(char))
-            goals.push([{ goal: char, type: "follow" }, 2]);
-        }
-
-        if (goals.length) {
-          let goal = roll(goals);
-          if (goal.goal instanceof TerrainType) {
-            this.setPlannedAction(MoveAction, 2, {
-              targetCoords: [goal.goal.x, goal.goal.y],
-            });
-          } else {
-            this.setPlannedAction(FollowAction, 2, {
-              target: goal.goal,
-            });
-          }
-        }
-      }
-
-      if (!this.currentAction) {
-        let [x, y] = [0, 0];
-        let attempt = 0;
-        let numWaterTiles = 0;
-        do {
-          attempt++;
-          [x, y] = game.map.getRandomLandPoint();
-          numWaterTiles = game.map.countWaterTilesInPath(
-            this.x(),
-            this.y(),
-            x,
-            y
-          );
-        } while (attempt < 10 && numWaterTiles > 3);
-        this.setPlannedAction(MoveAction, 1, {
-          targetCoords: game.map.getRandomLandPoint(this),
-        });
-      }
-    }
+    planAction(this);
   }
 
   //perform action
@@ -399,6 +190,12 @@ export class Char {
     if (this.equip.weapon) {
       this.equip.weapon.use();
       if (this.equip.weapon.uses == 0) this.equip.weapon = undefined;
+    }
+  }
+  useArmor() {
+    if (this.equip.armor) {
+      this.equip.armor.use();
+      if (this.equip.armor.uses == 0) this.equip.armor = undefined;
     }
   }
   turnEnd() {
@@ -461,26 +258,6 @@ export class Char {
       d++;
     } while (d <= game.maxPathFind * 1.5);
   }
-  /*visionCheck(x: number, y: number, dir: number, prev: number, limit: number) {
-    if (!getTerrain(x, y)) return;
-    let xy = `${x},${y}`;
-    this.situation.seen.add(xy);
-    this.situation.vision.add(xy);
-    let curr = getTerrain(x, y).elevation;
-    if (curr < 0) curr = -1;
-    //if (getTerrain(x, y).type == "tree") curr += 0.5;
-    if (curr > prev) {
-      return;
-    } else if (curr == prev) {
-      limit--;
-      if (limit == 0) return;
-    } else if (curr < prev) {
-      limit++;
-    }
-    for (let [x2, y2] of getNearby(x, y)) {
-      this.visionCheck(x2, y2, -1, curr, limit);
-    }
-  }*/
 
   explore() {
     let priorities: Array<[string, number]> = [];
@@ -527,13 +304,11 @@ export class Char {
   //check if player is supposed to die
   limitCheck() {
     if (isNaN(this.stats.health) || isNaN(this.stats.energy)) {
-      this.death = this.name + " glitched to death";
-      this.die();
+      this.die("glitched to death");
       return;
     }
     if (isNaN(this.situation.x) || isNaN(this.situation.y)) {
-      this.death = this.name + " glitched out of reality";
-      this.die();
+      this.die("glitched out of reality");
       return;
     }
 
@@ -557,11 +332,9 @@ export class Char {
   }
 
   //action on death
-  die() {
-    if (!this.death) {
-      // this.death = this.name + " died of unknown causes";
-      this.death = "Cast in the name of God, Ye Guilty";
-    }
+  die(death?: string) {
+    if (this.dead) return;
+    this.death = death ?? this.name + " died of unknown causes";
     this.dead = true;
   }
 }
