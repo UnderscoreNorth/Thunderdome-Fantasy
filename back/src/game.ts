@@ -66,6 +66,9 @@ export function generateGame(diameter: number) {
   game.map = new Terrain(diameter);
   game.msg = "";
   game.toBurn = [];
+  game.day = 1;
+  game.hour = 8;
+  game.minute = 0;
   for (let i = 0; i < 72; i++) {
     let ii = p[i % 4];
     let [x, y] = game.map.getRandomLandPoint();
@@ -137,7 +140,7 @@ export function turn() {
   }
   game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 25;
   game.radius = Math.max(
-    8,
+    5,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
       game.diameter *
       0.8
