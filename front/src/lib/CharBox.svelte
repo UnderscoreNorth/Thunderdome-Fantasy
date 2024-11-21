@@ -10,12 +10,12 @@
 	<td>
 		<div
 			style:height={'4px'}
-			style:width={(char.stats.health / char.stats.maxHealth) * 100 + '%'}
+			style:width={(Math.max(char.stats.health, 0) / char.stats.maxHealth) * 100 + '%'}
 			style:background={'red'}
 		/>
 		<div
 			style:height={'4px'}
-			style:width={(char.stats.energy / char.stats.maxEnergy) * 100 + '%'}
+			style:width={(Math.max(char.stats.energy, 0) / char.stats.maxEnergy) * 100 + '%'}
 			style:background={'green'}
 		/>
 		<div class="iconBar">

@@ -53,7 +53,7 @@ export function planAction(char: Char) {
             goal: getTerrain(x, y),
             type: "move",
           },
-          Math.pow(value, 2) * 10,
+          Math.pow(value + 1, 2) * 10,
         ]);
     }
     for (const oChar of char.situation.awareOf) {

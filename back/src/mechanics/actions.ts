@@ -47,8 +47,8 @@ export class RestAction extends Action {
 
 export class SleepAction extends RestAction {
   constructor(arg: ActionArg) {
-    super(arg);
     arg.turns = roll_range(24, 32);
+    super(arg);
     this.name = "Sleep";
   }
 
