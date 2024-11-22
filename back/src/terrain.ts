@@ -549,7 +549,7 @@ export class Terrain {
     //Locations
     this.populateLocations(
       "cave",
-      [2, 4],
+      [3, 5],
       3,
       Math.ceil(Math.pow(this.diameter, 2) / 100),
       1,
