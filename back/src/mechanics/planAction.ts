@@ -84,7 +84,7 @@ export function planAction(char: Char) {
     for (const oChar of char.situation.inRangeOf) {
       goals.push([
         { goal: oChar, type: "fight" },
-        Math.round((200 - oChar.stats.health) / 10),
+        Math.round((200 - oChar.stats.health) / 10) * (game.day / 2),
       ]);
       goals.push([
         { goal: oChar, type: "escape" },

@@ -42,6 +42,9 @@ export function fight_target(tP: Char, oP: Char) {
     oP.statusMessage = "killed by " + tP.name;
     oP.die("killed by " + tP.name);
   } else {
+    if (oP.currentAction && Math.random() > oP.currentAction.interuptChance) {
+      oP.currentAction = undefined;
+    }
     let atk = launch_attack(oP, tP);
     if (tP.stats.health <= 0) {
       oP.stats.kills++;

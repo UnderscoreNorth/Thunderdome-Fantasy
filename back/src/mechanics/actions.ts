@@ -16,12 +16,14 @@ export class Action {
   priority: number;
   energyCost: number;
   data: any;
+  interuptChance: number;
   constructor(arg: ActionArg) {
     this.player = arg.player;
     this.complete = false;
     this.priority = arg.priority;
     this.turns = arg.turns ?? 1;
     this.energyCost = arg.energyCost ?? 0;
+    this.interuptChance = 1;
   }
   perform() {}
   postPerform() {
@@ -49,6 +51,7 @@ export class SleepAction extends RestAction {
   constructor(arg: ActionArg) {
     arg.turns = roll_range(24, 32);
     super(arg);
+    this.interuptChance = 0;
     this.name = "Sleep";
   }
 

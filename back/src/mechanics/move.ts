@@ -23,6 +23,7 @@ export class MoveAction extends Action {
   ) {
     arg.turns = 999;
     super(arg);
+    this.interuptChance = 0.9;
     this.name = "Move";
     //get a coordinate to move to if not currently moving
     this.speedModifier = 1;
