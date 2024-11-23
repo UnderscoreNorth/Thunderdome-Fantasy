@@ -64,6 +64,11 @@
 							g = Object.assign(g, r);
 						}
 						g.chars = sortChars(g.chars);
+						for (const xy of g.burned) {
+							let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
+							g.map[x][y].icon = '🔥';
+							g.map[x][y].glow = false;
+						}
 						return g;
 					});
 				})

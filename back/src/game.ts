@@ -14,9 +14,11 @@ import path from "path";
 export const newGameData: {
   diameter: number;
   chars: Array<{ name: string; img: string; group: string }>;
+  timeLength: number;
 } = {
   diameter: 20,
   chars: [],
+  timeLength: 17280,
 };
 export const game: {
   chars: Array<Char>;
@@ -38,6 +40,7 @@ export const game: {
   toBurn: Array<TerrainType>;
   name: string;
   newGame: boolean;
+  burned: string[];
 } = {
   chars: [],
   map: new Terrain(20),
@@ -58,6 +61,7 @@ export const game: {
   toBurn: [],
   name: "",
   newGame: false,
+  burned: [],
 };
 export function generateGame() {
   game.ready = false;
@@ -66,11 +70,13 @@ export function generateGame() {
   game.diameter = newGameData.diameter;
   game.radius = newGameData.diameter;
   game.map = new Terrain(newGameData.diameter);
+  game.timeLength = newGameData.timeLength;
   game.msg = "";
   game.toBurn = [];
   game.day = 1;
   game.hour = 8;
   game.minute = 0;
+  game.burned = [];
   game.name = new Date().getTime().toString();
   if (!existsSync("./games/" + game.name)) mkdirSync("./games/" + game.name);
   writeFileSync(
@@ -99,23 +105,6 @@ export function generateGame() {
       )
     );
   }
-  /*for (let group in players) {
-    for (let player of players[group]) {
-      let [x, y] = game.map.getRandomLandPoint();
-      game.chars.push(
-        new Char(
-          player.name,
-          group,
-          player.img,
-          x,
-          y,
-          "Neutral",
-          "Neutral",
-          game.chars.length
-        )
-      );
-    }
-  }*/
   game.ready = true;
 }
 
@@ -162,7 +151,7 @@ export async function turn() {
     char.turnEnd();
   }
   log("Turn End");
-  game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 25;
+  game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 24;
   game.radius = Math.max(
     5,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
@@ -182,6 +171,7 @@ export async function turn() {
       game.toBurn[i].icon = "🔥";
       game.toBurn[i].value = 0;
       game.toBurn[i].glow = false;
+      game.burned.push(`${game.toBurn[i].x},${game.toBurn[i].y}`);
       game.toBurn.splice(i, 1);
     }
   }
@@ -213,6 +203,7 @@ export async function turn() {
 export function toJson() {
   return {
     name: game.name,
+    burned: game.burned,
     time: {
       minute: game.minute,
       hour: game.hour,
@@ -299,6 +290,7 @@ export function retrieveJson(id: string) {
 export function newGame(data: any) {
   newGameData.chars = data.chars;
   newGameData.diameter = data.diameter;
+  newGameData.timeLength = data.days * 24 * 60;
   game.newGame = true;
   turn();
 }

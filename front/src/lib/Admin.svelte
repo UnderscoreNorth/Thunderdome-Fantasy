@@ -11,6 +11,7 @@
 	let chars: Char[] = [{ name: '', group: '', img: '' }];
 	let data = '';
 	let diameter = 250;
+	let days = 12;
 	onMount(() => {});
 	async function enterKey(e: KeyboardEvent) {
 		if (e.key == 'Enter') {
@@ -25,8 +26,8 @@
 		show = true;
 	}
 	function newGame() {
-		if (parseInt(diameter.toString()) > 20 && getData().length)
-			api('newGame', { pass, chars: getData(), diameter });
+		if (parseInt(diameter.toString()) > 20 && getData().length && days > 1)
+			api('newGame', { pass, chars: getData(), diameter, days });
 	}
 	function newRow() {
 		let char = chars[chars.length - 1];
@@ -129,12 +130,14 @@
 						>
 						<div>
 							<input style:width="3rem" bind:value={diameter} />
-							<span style:vertical-align="middle">Game Width</span>
+							<span style:vertical-align="middle">Game Width</span><br />
+							<input style:width="3rem" bind:value={days} />
+							<span style:vertical-align="middle">Game Length</span>
 						</div>
 						<button
 							on:click={() => {
 								newGame();
-							}}>Generate New Game</button
+							}}>Generate<br />New Game</button
 						>
 					</div>
 				</div>

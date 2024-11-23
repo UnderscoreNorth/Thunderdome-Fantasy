@@ -15,6 +15,7 @@ export type Game = {
 		minute: number;
 	};
 	msg: string;
+	burned: string[];
 };
 export type TerrainType = {
 	x: number;
