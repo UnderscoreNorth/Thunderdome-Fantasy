@@ -142,7 +142,9 @@
 	}
 	char.sel {
 		opacity: 1;
-		box-shadow: 0 0 100px 15px #fff;
+		z-index: 2;
+		border: solid 1px white;
+		box-shadow: 0 0 100px 25px #fff;
 	}
 
 	char.dead {

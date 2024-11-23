@@ -72,10 +72,9 @@ export function getWeapon(value: number) {
       1,
     ],
   ];
-  for (const weapon of weaponOdds) {
-    weapon[1] = Math.pow(weapon[1] - 100 * (value - 1), 2);
-  }
-  return new Weapon(roll(weaponOdds));
+  return new Weapon(
+    roll(weaponOdds.filter((i) => (i[0] as Wpn).value >= value))
+  );
 }
 export class Weapon extends Item {
   type: "melee" | "range" | "magic";

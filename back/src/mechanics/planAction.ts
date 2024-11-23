@@ -21,6 +21,7 @@ export function planAction(char: Char) {
           | "loot"
           | "escape"
           | "move"
+          | "moveToLoot"
           | "sleep"
           | "follow"
           | "rest"
@@ -36,6 +37,24 @@ export function planAction(char: Char) {
       { type: "rest", goal: char },
       15 * (1 - char.stats.energy / char.stats.maxEnergy),
     ]);
+    for (const oChar of char.situation.awareOf) {
+      if (!char.situation.inRangeOf.includes(oChar))
+        goals.push([
+          { goal: oChar, type: "follow" },
+          Math.round((200 - oChar.stats.health) / 10),
+        ]);
+    }
+    if (char.equip.weapon && char.equip.weapon.action) {
+      goals.push([
+        {
+          goal: char,
+          type: "weaponAction",
+        },
+        char.equip.weapon.planAction(),
+      ]);
+    }
+  }
+  if (char.currentAction?.priority < 2) {
     for (let xy of Array.from(char.situation.vision)) {
       let [x, y] = fromXY(xy);
       let isGoal = false;
@@ -52,26 +71,10 @@ export function planAction(char: Char) {
         goals.push([
           {
             goal: getTerrain(x, y),
-            type: "move",
+            type: "moveToLoot",
           },
           Math.pow(value + 1, 2) * 10,
         ]);
-    }
-    for (const oChar of char.situation.awareOf) {
-      if (!char.situation.inRangeOf.includes(oChar))
-        goals.push([
-          { goal: oChar, type: "follow" },
-          Math.round((200 - oChar.stats.health) / 10),
-        ]);
-    }
-    if (char.equip.weapon && char.equip.weapon.action) {
-      goals.push([
-        {
-          goal: char,
-          type: "weaponAction",
-        },
-        char.equip.weapon.planAction(),
-      ]);
     }
   }
   if (char.currentAction?.priority < 3) {
@@ -128,6 +131,10 @@ export function planAction(char: Char) {
     } else if (goal.type == "move") {
       char.setPlannedAction(MoveAction, 1, {
         targetCoords: game.map.getRandomLandPoint(char),
+      });
+    } else if (goal.type == "moveToLoot") {
+      char.setPlannedAction(MoveAction, 2, {
+        targetCoords: [goal.goal.x, goal.goal.y],
       });
     } else if (goal.type == "follow") {
       char.setPlannedAction(FollowAction, 2, {

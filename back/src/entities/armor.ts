@@ -12,10 +12,9 @@ export function getArmor(value: number) {
     [{ name: "leather", defBonus: 0.7, uses: [5, 20], value: 2 }, 25],
     [{ name: "plate", defBonus: 0.5, uses: [5, 20], value: 3 }, 10],
   ];
-  for (const weapon of armorOdds) {
-    weapon[1] = Math.pow(weapon[1] - 100 * (value - 1), 2);
-  }
-  return new Armor(roll(armorOdds));
+  return new Armor(
+    roll(armorOdds.filter((i) => (i[0] as Tarmor).value >= value))
+  );
 }
 export class Armor extends Item {
   constructor(a: Tarmor) {

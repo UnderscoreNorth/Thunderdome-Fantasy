@@ -47,7 +47,7 @@ export class TerrainType {
         let cY = game.map.centerY;
         let d = hypD(char.x() - cX, char.y() - cY);
         let land = game.map.land.map((i) => i[0] + "," + i[1]);
-        let i = Math.min(Math.ceil(d), 4);
+        let i = Math.min(Math.ceil(d), roll_range(4, game.maxPathFind));
         let found = false;
         do {
           let tiles = game.map.getRing(char.x(), char.y(), i);

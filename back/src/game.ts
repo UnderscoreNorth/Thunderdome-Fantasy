@@ -125,6 +125,14 @@ export async function turn() {
     if (!game.complete) {
       game.complete = true;
       game.msg = "Game has finished, restarting in 15 minutes";
+      writeFileSync(
+        `./games/${game.name}/${game.day
+          .toString()
+          .padStart(2, "0")}-${game.hour
+          .toString()
+          .padStart(2, "0")}-${game.minute.toString().padStart(2, "0")}.json`,
+        JSON.stringify(toJson())
+      );
       setTimeout(() => {
         generateGame();
       }, 900000);
