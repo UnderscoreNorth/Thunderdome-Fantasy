@@ -9,31 +9,63 @@
 	import Canvas from '$lib/Canvas.svelte';
 	import MapOverlay from '$lib/MapOverlay.svelte';
 	import { game } from '$lib/classes';
+	import Admin from '$lib/Admin.svelte';
+	import CONFIG from '$lib/config.json';
 	let unit = 0;
-	let centerRadius = 0;
-	let rerender: number;
 	let pinging = false;
-	let seed = 0;
 	let showKilled = true;
-
+	let sort: 'group' | 'name' | 'value' = 'group';
+	function sortChars(chars: Array<Char>) {
+		return chars.sort((a, b) => {
+			if (sort == 'group') {
+				if (a.group == b.group) {
+					if (a.name == b.name) return 0;
+					return a.name > b.name ? 1 : -1;
+				} else {
+					return a.group > b.group ? 1 : -1;
+				}
+			} else if (sort == 'value') {
+				return (
+					b.stats.health * (1 + (b.stats.magicExp + b.stats.meleeExp + b.stats.rangeExp) / 100) -
+					a.stats.health * (1 + (a.stats.magicExp + a.stats.meleeExp + a.stats.rangeExp) / 100)
+				);
+			} else {
+				if (a.name == b.name) return 0;
+				return a.name > b.name ? 1 : -1;
+			}
+		});
+	}
+	function changeSort() {
+		if (sort == 'group') {
+			sort = 'name';
+		} else if (sort == 'name') {
+			sort = 'value';
+		} else {
+			sort = 'group';
+		}
+		$game.chars = sortChars($game.chars);
+	}
 	onMount(async () => {
-		seed = Math.random();
 		ping();
 		setInterval(() => {
 			ping();
-		}, 5000);
+		}, CONFIG.freq);
 	});
 	function ping() {
 		if (!pinging) {
 			pinging = true;
-			api('get')
+			api('get?id=' + ($game?.name ?? 'new'))
 				.then((r) => {
-					if (r.diameter) {
-						game.set(r);
-						centerRadius = ((15 - r.time.day) / 15) * r.diameter * 0.75;
-						rerender = Math.random();
-						unit = r.diameter;
-					}
+					if (!r.time) return undefined;
+					game.update((g) => {
+						if (g == undefined) {
+							g = r;
+						} else {
+							g = Object.assign(g, r);
+						}
+						g.chars = sortChars(g.chars);
+						return g;
+					});
 				})
 				.finally(() => {
 					pinging = false;
@@ -46,26 +78,39 @@
 		} else {
 			$selectedCharID = char.id;
 		}
-		rerender = Math.random();
 	}
 </script>
 
 <svelte:head></svelte:head>
 <app>
-	{#if $game}
-		<Canvas {unit} />
-		<MapOverlay {unit} {selectChar} />
-		<div id="sidePanel">
-			<div style:height={'1rem'} style:padding-bottom={'5px'}>
+	<Canvas {unit} />
+	<MapOverlay {unit} {selectChar} />
+	<div id="sidePanel">
+		{#if !$game}
+			<div style:margin="auto"><h1>Waiting for game...</h1></div>
+		{/if}
+		<div id="topBar">
+			{#if $game}
 				<b>{$game.msg}</b>
-				Day {$game.time.day}
-				{$game.time.hour.toString().padStart(2, '0')}:{$game.time.minute
-					.toString()
-					.padStart(2, '0')}
-				{$game.chars.filter((i) => !i.death).length}/{$game.chars.length} Chars
+				<div>
+					Day {$game.time.day}
+					{$game.time.hour.toString().padStart(2, '0')}:{$game.time.minute
+						.toString()
+						.padStart(2, '0')}
+				</div>
+				<div>
+					{$game.chars.filter((i) => !i.death).length}/{$game.chars.length} Chars
+				</div>
 				<input bind:checked={showKilled} type="checkbox" />Show <Icon icon="kills" />
-			</div>
-			<div id="sidePanelChars">
+				<div style:width="1rem" id="sortButton" on:click={() => changeSort()}>
+					<Icon icon="sort" />
+				</div>
+			{/if}
+			<div style:flex-grow="1"></div>
+			<div style:width="1rem"><Admin /></div>
+		</div>
+		<div id="sidePanelChars">
+			{#if $game}
 				{#each $game.chars as char (char.id)}
 					{#if showKilled || (!showKilled && !char.death)}
 						<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -79,16 +124,16 @@
 						</table>
 					{/if}
 				{/each}
-			</div>
-			<div id="sidePanelLog">
-				{#if $selectedCharID !== undefined}
-					{#each $game.chars.filter((x) => x.id == $selectedCharID) as char}
-						<CharDetailed {char} {selectChar} />
-					{/each}
-				{/if}
-			</div>
+			{/if}
 		</div>
-	{/if}
+		<div id="sidePanelLog">
+			{#if $selectedCharID !== undefined}
+				{#each $game.chars.filter((x) => x.id == $selectedCharID) as char}
+					<CharDetailed {char} {selectChar} />
+				{/each}
+			{/if}
+		</div>
+	</div>
 </app>
 
 <style>
@@ -98,11 +143,20 @@
 		height: 100vh;
 		width: 100vw;
 	}
-
+	#sortButton:hover {
+		cursor: pointer;
+		background: #575757;
+	}
 	.gameBar {
 		position: absolute;
 		z-index: 1;
 		opacity: 0.7;
+	}
+	#topBar {
+		height: 1rem;
+		padding-bottom: 5px;
+		display: flex;
+		gap: 5px;
 	}
 	#sidePanel {
 		flex-grow: 1;
@@ -123,15 +177,18 @@
 	#sidePanelChars table {
 		height: 3rem;
 		cursor: pointer;
-		width: 7rem;
+		width: 10rem;
 	}
 	#sidePanelChars table:hover {
 		background: #313131;
 	}
 	#sidePanelChars table.sel {
-		border: solid 1px white;
+		background: #575757;
 	}
 	#sidePanelChars table.dead {
 		opacity: 0.5;
+	}
+	:global(svg) {
+		color: rgb(190, 123, 0);
 	}
 </style>

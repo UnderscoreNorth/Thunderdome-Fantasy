@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { type TerrainType, selectedCharID, game, view, selectedIsland } from './classes';
 	import { iconSvg } from './icon';
-	import { claim_text } from 'svelte/internal';
 	export let unit: number;
 	let h: number;
 	let timeArr: Record<string, number> = {};
@@ -23,6 +22,13 @@
 		} else if (cell.type == 'plain' || cell.type == 'tree') {
 			saturation = (3 - cell.elevation) * 10 + 10;
 			light = (2 - cell.elevation) * 7.5 + 20;
+			/*if (Math.abs(cell.y - $game.diameter / 2) > ($game.diameter / 2) * 0.5) {
+				saturation = Math.min(
+					90 * (1 - Math.abs(cell.y - $game.diameter / 8) / ($game.diameter / 8)) + 10,
+					saturation
+				);
+				light = 95 - cell.elevation * 5;
+			}*/
 			hue = 112;
 		} else if (cell.type == 'mtn') {
 			light = (cell.elevation + 1) * 10 + 10;
@@ -96,7 +102,7 @@
 		return `hsla(${hue},${saturation}%,${light}%,${alpha})`;
 	}
 	let canvas: HTMLCanvasElement;
-	let cached = new Image();
+	let cached: HTMLImageElement;
 	let ctx: CanvasRenderingContext2D | null;
 	let cameraC: HTMLCanvasElement;
 	let cameraCtx: CanvasRenderingContext2D | null;
@@ -107,6 +113,7 @@
 		canvas.height = $view.renderSize;
 		ctx = canvas.getContext('2d');
 		cameraCtx = cameraC.getContext('2d');
+		cached = new Image();
 		requestAnimationFrame(draw);
 		game.subscribe(() => {
 			requestAnimationFrame(draw);
@@ -122,12 +129,13 @@
 		});
 	});
 	function draw() {
+		if (!$game?.name) return;
 		//timeArr = {};
 		//p = performance.now();
 		time = $game.time.hour * 60 + $game.time.minute;
 		diff = 1 - Math.pow(Math.abs(time - 840) / 720, 4);
 		if (diff < 0.6) diff = 0.6;
-		let u = $view.renderSize / unit;
+		let u = $view.renderSize / $game.diameter;
 		if (!ctx) return;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -197,6 +205,7 @@
 	}
 	function camera() {
 		if (!cameraCtx) return;
+		if (!cached) return;
 		cameraCtx.setTransform(1, 0, 0, 1, 0, 0);
 		cameraCtx.fillStyle = $selectedCharID !== undefined ? 'rgb(2,5,14)' : 'rgb(5,17,46)';
 		cameraCtx.fillRect(0, 0, canvas.width, canvas.height);
@@ -209,7 +218,7 @@
 		let dir = e.deltaY > 0 ? 1 : -1;
 		zoom -= e.deltaY / 1000;
 		if (zoom < 1) zoom = 1;
-		if (zoom > 2) zoom = 2;
+		if (zoom > 3) zoom = 3;
 		let x = $view.x - (Math.ceil((e.offsetX / h) * 3) - 2) * 10 * dir;
 		let y = $view.y - (Math.ceil((e.offsetY / h) * 3) - 2) * 10 * dir;
 		if (x < 0) x = 0;
@@ -232,14 +241,13 @@
 		let { zoom, x, y } = $view;
 		zoom += 0.08;
 		if (zoom < 1) zoom = 1;
-		if (zoom > 2) zoom = 2;
+		if (zoom > 3) zoom = 3;
 		$view.zoom = zoom;
 	}
 	function dragStart(e: MouseEvent) {
 		drag = true;
 		startX = e.offsetX;
 		startY = e.offsetY;
-
 		let names = Array.from(document.getElementsByClassName('islandName'))
 			.concat(Array.from(document.getElementsByClassName('gameBar')))
 			.concat(Array.from(document.getElementsByTagName('char'))) as HTMLDivElement[];
@@ -248,7 +256,7 @@
 		}
 	}
 	function dragMove(e: MouseEvent) {
-		let dragSpeed = unit * 5 * $view.zoom;
+		let dragSpeed = $game.diameter * 5 * $view.zoom;
 		if (drag) {
 			xDiff = ((e.offsetX - startX) / h) * dragSpeed;
 			$view.xDiff = xDiff;

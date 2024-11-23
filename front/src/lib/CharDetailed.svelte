@@ -53,7 +53,7 @@
 			<th>{char.name}</th>
 		</tr>
 		<tr>
-			<td><i>{char.group}</i></td>
+			<td><i>{isNaN(parseInt(char.group)) ? char.group : 'Solo'}</i></td>
 		</tr>
 		<tr>
 			<td
@@ -87,6 +87,8 @@
 		max-height: 10vh;
 		background-size: cover;
 		aspect-ratio: 1;
+		border-radius: 50%;
+		border: solid 2px white;
 	}
 	th,
 	td {
@@ -106,7 +108,6 @@
 	}
 	.stats tr > *:nth-child(2) {
 		width: 1rem;
-		color: rgb(190, 123, 0);
 	}
 	.general tr {
 		text-align: left;

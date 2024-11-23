@@ -1,7 +1,23 @@
+import {
+  existsSync,
+  lstatSync,
+  mkdir,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
 import { Char } from "./entities/char";
 import { Terrain, TerrainType, TerrainUnseen } from "./terrain";
 import { getTerrain, hypD, shuffle } from "./utils";
-
+import path from "path";
+export const newGameData: {
+  diameter: number;
+  chars: Array<{ name: string; img: string; group: string }>;
+} = {
+  diameter: 20,
+  chars: [],
+};
 export const game: {
   chars: Array<Char>;
   map: Terrain;
@@ -20,6 +36,8 @@ export const game: {
   msg: string;
   complete: boolean;
   toBurn: Array<TerrainType>;
+  name: string;
+  newGame: boolean;
 } = {
   chars: [],
   map: new Terrain(20),
@@ -31,56 +49,48 @@ export const game: {
   day: 1,
   minute: 0,
   radius: 20,
-  ready: false,
+  ready: true,
   timeLength: 17280,
   elapsedTime: 0,
   maxPathFind: 15,
   msg: "",
   complete: false,
   toBurn: [],
+  name: "",
+  newGame: false,
 };
-const p = [
-  {
-    name: "Liru",
-    img: "https://cdn.myanimelist.net/images/characters/4/54606.jpg",
-  },
-  {
-    name: "Pachira",
-    img: "https://cdn.myanimelist.net/images/characters/4/54605.jpg",
-  },
-  {
-    name: "Uma",
-    img: "https://cdn.myanimelist.net/images/characters/5/54607.jpg",
-  },
-  {
-    name: "Aiko",
-    img: "https://cdn.myanimelist.net/images/characters/2/54608.jpg",
-  },
-];
-export function generateGame(diameter: number) {
+export function generateGame() {
   game.ready = false;
   game.complete = false;
   game.chars = [];
-  game.diameter = diameter;
-  game.radius = diameter;
-  game.map = new Terrain(diameter);
+  game.diameter = newGameData.diameter;
+  game.radius = newGameData.diameter;
+  game.map = new Terrain(newGameData.diameter);
   game.msg = "";
   game.toBurn = [];
   game.day = 1;
   game.hour = 8;
   game.minute = 0;
-  for (let i = 0; i < 72; i++) {
-    let ii = p[i % 4];
+  game.name = new Date().getTime().toString();
+  if (!existsSync("./games/" + game.name)) mkdirSync("./games/" + game.name);
+  writeFileSync(
+    `./games/${game.name}/map.json`,
+    JSON.stringify({
+      name: game.name,
+      map: game.map.array,
+      islands: game.map.islands,
+      center: { x: game.map.centerX, y: game.map.centerY },
+      diameter: game.diameter,
+    })
+  );
+  for (let char of newGameData.chars) {
+    if (typeof char !== "object") continue;
     let [x, y] = game.map.getRandomLandPoint();
     game.chars.push(
       new Char(
-        ii.name +
-          " " +
-          Math.ceil(i / 4)
-            .toString()
-            .padStart(2, "0"),
-        "Group " + ii.name,
-        ii.img,
+        char.name,
+        char.group.length ? char.group : game.chars.length.toString(),
+        char.img,
         x,
         y,
         "Neutral",
@@ -88,13 +98,36 @@ export function generateGame(diameter: number) {
         game.chars.length
       )
     );
-    console.log("Loading Character: " + i);
   }
+  /*for (let group in players) {
+    for (let player of players[group]) {
+      let [x, y] = game.map.getRandomLandPoint();
+      game.chars.push(
+        new Char(
+          player.name,
+          group,
+          player.img,
+          x,
+          y,
+          "Neutral",
+          "Neutral",
+          game.chars.length
+        )
+      );
+    }
+  }*/
   game.ready = true;
 }
 
-export function turn() {
+export async function turn() {
   if (!game.ready) return;
+  if (game.newGame) {
+    game.ready = false;
+    game.newGame = false;
+    generateGame();
+    game.ready = true;
+    return;
+  }
   let remainingGroups = new Set(
     game.chars.filter((i) => !i.dead).map((i) => i.group)
   ).size;
@@ -104,7 +137,7 @@ export function turn() {
       game.complete = true;
       game.msg = "Game has finished, restarting in 15 minutes";
       setTimeout(() => {
-        generateGame(250);
+        generateGame();
       }, 900000);
     }
     return;
@@ -129,15 +162,6 @@ export function turn() {
     char.turnEnd();
   }
   log("Turn End");
-  game.minute += 15;
-  if (game.minute == 60) {
-    game.minute = 0;
-    game.hour += 1;
-  }
-  if (game.hour == 24) {
-    game.hour = 0;
-    game.day++;
-  }
   game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 25;
   game.radius = Math.max(
     5,
@@ -145,7 +169,6 @@ export function turn() {
       game.diameter *
       0.8
   );
-  console.log(game.radius);
   for (let i = game.map.land.length - 1; i >= 0; i--) {
     let x = game.map.land[i][0];
     let y = game.map.land[i][1];
@@ -164,35 +187,37 @@ export function turn() {
   }
   log("Land Reduce");
   console.log(timeArr);
+  writeFileSync(
+    `./games/${game.name}/${game.day.toString().padStart(2, "0")}-${game.hour
+      .toString()
+      .padStart(2, "0")}-${game.minute.toString().padStart(2, "0")}.json`,
+    JSON.stringify(toJson())
+  );
+  game.minute += 15;
+  if (game.minute == 60) {
+    game.minute = 0;
+    game.hour += 1;
+  }
+  if (game.hour == 24) {
+    game.hour = 0;
+    game.day++;
+  }
   game.ready = true;
+
   function log(name: string) {
     let time = Math.round(performance.now() - p);
     timeArr[name] = time;
     p = performance.now();
   }
 }
-export async function toJson() {
-  while (!game.ready) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  let map = JSON.parse(JSON.stringify(game.map.array)) as Array<
-    Array<TerrainType>
-  >;
-  /*for (let x = 0; x < game.diameter; x++) {
-    for (let y = 0; y < game.diameter; y++) {
-      if (!game.map.seen[x][y]) map[x][y] = new TerrainUnseen(0);
-    }
-  }*/
+export function toJson() {
   return {
+    name: game.name,
     time: {
       minute: game.minute,
       hour: game.hour,
       day: game.day,
     },
-    map,
-    islands: game.map.islands,
-    center: { x: game.map.centerX, y: game.map.centerY },
-    diameter: game.diameter,
     msg: game.msg,
     chars: game.chars
       .sort((a, b) => {
@@ -236,4 +261,44 @@ export async function toJson() {
         };
       }),
   };
+}
+export function retrieveJson(id: string) {
+  if (game.name == "") return {};
+  if (existsSync("./games/" + game.name)) {
+    let data = {};
+    if (id !== game.name) {
+      data = Object.assign(
+        data,
+        JSON.parse(readFileSync(`./games/${game.name}/map.json`, "utf8"))
+      );
+    }
+    data = Object.assign(
+      data,
+      JSON.parse(
+        readFileSync(
+          `./games/${game.name}/${
+            readdirSync(`./games/${game.name}`)
+              .filter((f) =>
+                lstatSync(path.join(`./games/${game.name}`, f)).isFile()
+              )
+              .map((file) => ({
+                file,
+                mtime: lstatSync(path.join(`./games/${game.name}`, file)).mtime,
+              }))
+              .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())[0].file
+          }`,
+          "utf8"
+        )
+      )
+    );
+    return data;
+  } else {
+    return {};
+  }
+}
+export function newGame(data: any) {
+  newGameData.chars = data.chars;
+  newGameData.diameter = data.diameter;
+  game.newGame = true;
+  turn();
 }

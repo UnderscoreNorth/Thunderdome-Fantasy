@@ -19,6 +19,8 @@
 	import GiSpellBook from 'svelte-icons/gi/GiSpellBook.svelte';
 	import GiWizardStaff from 'svelte-icons/gi/GiWizardStaff.svelte';
 	import GiBullseye from 'svelte-icons/gi/GiBullseye.svelte';
+	import MdSettings from 'svelte-icons/md/MdSettings.svelte';
+	import MdSort from 'svelte-icons/md/MdSort.svelte';
 	export let icon: string;
 </script>
 
@@ -62,4 +64,8 @@
 	<GiWizardStaff />
 {:else if icon == 'rangeExp'}
 	<GiBullseye />
+{:else if icon == 'cog'}
+	<MdSettings />
+{:else if icon == 'sort'}
+	<MdSort />
 {/if}

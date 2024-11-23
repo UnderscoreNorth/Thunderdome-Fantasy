@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 export type Game = {
+	name: string;
 	map: TerrainType[][];
 	islands: Record<string, string>;
 	center: {
@@ -67,7 +68,7 @@ export type Char = {
 	path?: Array<[number, number]>;
 	log: string[];
 };
-export const game = writable<Game>(undefined);
+export const game = writable<Game>();
 export const selectedCharID = writable<number | undefined>(undefined);
 export const selectedIsland = writable<string | undefined>(undefined);
 export const view = writable<{

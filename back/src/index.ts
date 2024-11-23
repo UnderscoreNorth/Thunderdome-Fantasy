@@ -1,14 +1,16 @@
 import express from "express";
 import cors from "cors";
 import config from "../config.json";
-import { generateGame, toJson, turn } from "./game";
+import { generateGame, newGame, retrieveJson, toJson, turn } from "./game";
 import compression from "compression";
+import { existsSync, mkdirSync } from "fs";
 const app = express();
 const port = config.port;
-generateGame(250);
-turn();
+if (!existsSync("./games")) mkdirSync("./games");
+if (!config.freq) throw "Missing freq in config.json";
+if (!config.pass) throw "Missing pass in config.json";
+if (!config.port) throw "Missing port in config.json";
 setInterval(() => {
-  console.log(new Date().toLocaleTimeString());
   turn();
 }, config.freq);
 app.use(cors());
@@ -25,11 +27,21 @@ function shouldCompress(req, res) {
   return compression.filter(req, res);
 }
 app.use("/get", async (req, res, next) => {
-  res.send(await toJson());
+  res.send(retrieveJson(req.query.id as string));
 });
-
 app.listen(port, () => {
   console.log(`Thunderdome listening on port ${port}`);
+});
+app.use("/auth", async (req, res, next) => {
+  res.send({ auth: req.body.pass == config.pass });
+});
+app.use("/newGame", async (req, res, next) => {
+  if (req.body.pass !== config.pass) {
+    res.send({});
+    return;
+  }
+  newGame(req.body);
+  res.send({});
 });
 
 export default app;

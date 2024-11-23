@@ -553,7 +553,7 @@ export class Terrain {
       3,
       Math.ceil(Math.pow(this.diameter, 2) / 100),
       1,
-      [0, 3],
+      [0, 2],
       (x, y) => {
         let tile = this.array[x][y];
         return (
@@ -569,9 +569,9 @@ export class Terrain {
       10,
       Math.ceil(Math.pow(this.diameter, 2) / 50),
       1,
-      [1, 4]
+      [1, 2]
     );
-    this.populateLocations("tower", [4, 7], 3, 3, 2, [3, 5]);
+    this.populateLocations("tower", [4, 7], 5, 5, 2, [1, 1]);
     for (let x = 0; x < this.diameter; x++) {
       for (let y = 0; y < this.diameter; y++) {
         let tile = this.array[x][y];

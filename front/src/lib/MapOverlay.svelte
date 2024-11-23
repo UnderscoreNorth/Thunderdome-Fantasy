@@ -7,6 +7,8 @@
 	let islandNames: Array<{ i: string; s: number; name: string; x: number; y: number }> = [];
 	onMount(() => {
 		game.subscribe((g) => {
+			if (!g) return;
+			u = 100 / g.diameter;
 			islandNames = [];
 			for (let name in g.islands) {
 				if (name.indexOf('--') !== 0) {
@@ -88,7 +90,7 @@
 	</div>
 {/each}
 <div>
-	{#each $game.chars as char (char.id)}
+	{#each $game?.chars ?? [] as char (char.id)}
 		<char
 			on:click={() => {
 				selectChar(char);
@@ -135,10 +137,11 @@
 		background-size: cover;
 		opacity: 0.9;
 		cursor: pointer;
+		box-sizing: border-box;
+		border: solid 1px gold;
 	}
 	char.sel {
 		opacity: 1;
-		border: solid 2px red;
 		box-shadow: 0 0 100px 15px #fff;
 	}
 
