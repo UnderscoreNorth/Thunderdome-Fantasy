@@ -164,7 +164,6 @@ export class MoveAction extends Action {
     } else if (this.priority == 18) {
       this.player.logMsg("escaping fire");
     } else {
-      this.player.moveToCoords(targetX, targetY);
       switch (getTerrain(Math.round(targetX), Math.round(targetY)).type) {
         case "water":
           this.player.logMsg("swimming");
@@ -177,6 +176,7 @@ export class MoveAction extends Action {
           break;
       }
     }
+    this.player.moveToCoords(targetX, targetY);
     this.player.stats.energy -= Math.random() * 2 * this.speedModifier;
     // this.player.apply_all_effects("move");
   }
