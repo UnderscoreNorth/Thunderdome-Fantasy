@@ -16,7 +16,7 @@ export class FightAction extends Action {
   }
   perform(): void {
     if (this.target.stats.health <= 0) {
-      this.player.statusMessage = "attacks the corpse of " + this.target.name;
+      this.player.logMsg("attacks the corpse of " + this.target.name);
       return;
     }
     let dist = getD(this.player, this.target);
@@ -26,8 +26,9 @@ export class FightAction extends Action {
       dist
     ) {
       console.log(65, dist);
-      this.player.statusMessage =
-        "tries to fight " + this.target.name + " but they escape";
+      this.player.logMsg(
+        "tries to fight " + this.target.name + " but they escape"
+      );
       return;
     }
     fight_target(this.player, this.target);
@@ -35,11 +36,11 @@ export class FightAction extends Action {
 }
 export function fight_target(tP: Char, oP: Char) {
   let atk = launch_attack(tP, oP);
-  tP.statusMessage = atk + oP.name;
+  tP.logMsg(atk + oP.name);
   if (oP.stats.health <= 0) {
     tP.stats.kills++;
-    tP.statusMessage = "kills " + oP.name;
-    oP.statusMessage = "killed by " + tP.name;
+    tP.logMsg("kills " + oP.name);
+    oP.logMsg("killed by " + tP.name);
     oP.die("killed by " + tP.name);
   } else {
     if (oP.currentAction && Math.random() > oP.currentAction.interuptChance) {
@@ -48,8 +49,8 @@ export function fight_target(tP: Char, oP: Char) {
     let atk = launch_attack(oP, tP);
     if (tP.stats.health <= 0) {
       oP.stats.kills++;
-      oP.statusMessage = "kills " + tP.name;
-      tP.statusMessage = "killed by " + oP.name + "'s counterattack";
+      oP.logMsg("kills " + tP.name);
+      tP.logMsg("killed by " + oP.name + "'s counterattack");
       // pushMessage(oP, oP.name + " fights back and kills " + tP.name);
       tP.die("killed by " + oP.name + "'s counterattack");
     }

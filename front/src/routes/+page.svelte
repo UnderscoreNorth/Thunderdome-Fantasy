@@ -25,10 +25,18 @@
 					return a.group > b.group ? 1 : -1;
 				}
 			} else if (sort == 'value') {
-				return (
-					b.stats.health * (1 + (b.stats.magicExp + b.stats.meleeExp + b.stats.rangeExp) / 100) -
-					a.stats.health * (1 + (a.stats.magicExp + a.stats.meleeExp + a.stats.rangeExp) / 100)
-				);
+				if (a.death && b.death) {
+					if (a.log?.[0]?.[0] == b.log?.[0]?.[0]) {
+						return 0;
+					} else {
+						return b.log?.[0]?.[0] > a.log?.[0]?.[0] ? 1 : -1;
+					}
+				} else {
+					return (
+						b.stats.health * (1 + (b.stats.magicExp + b.stats.meleeExp + b.stats.rangeExp) / 100) -
+						a.stats.health * (1 + (a.stats.magicExp + a.stats.meleeExp + a.stats.rangeExp) / 100)
+					);
+				}
 			} else {
 				if (a.name == b.name) return 0;
 				return a.name > b.name ? 1 : -1;

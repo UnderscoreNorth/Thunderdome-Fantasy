@@ -12,6 +12,7 @@
 	let data = '';
 	let diameter = 250;
 	let days = 12;
+	let islandData = '';
 	onMount(() => {});
 	async function enterKey(e: KeyboardEvent) {
 		if (e.key == 'Enter') {
@@ -27,7 +28,13 @@
 	}
 	function newGame() {
 		if (parseInt(diameter.toString()) > 20 && getData().length && days > 1)
-			api('newGame', { pass, chars: getData(), diameter, days });
+			api('newGame', {
+				pass,
+				chars: getData(),
+				diameter,
+				days,
+				islandNames: islandData.split(/\n|,/gim).filter((i) => i.length)
+			});
 	}
 	function newRow() {
 		let char = chars[chars.length - 1];
@@ -75,11 +82,13 @@
 			{:else}
 				<div style:padding="1rem">
 					<table>
-						<tr>
+						<tr style:height="1rem">
 							<th></th>
 							<th>Name</th>
 							<th>Group</th>
 							<th>Img</th>
+							<th></th>
+							<th>Island Names</th>
 						</tr>
 						{#each chars as char, i}
 							<tr>
@@ -109,12 +118,23 @@
 								>
 								<td>
 									{#if char.name || char.group || char.img}
-										<button on:click={() => deleteRow(i)}>X</button>
+										<button tabindex="-1" on:click={() => deleteRow(i)}>X</button>
 									{/if}
 								</td>
+								{#if i == 0}
+									<td rowspan="0">
+										<textarea
+											placeholder="Line or comma seperated"
+											style:height={chars.length + 'rem'}
+											tabindex="-1"
+											bind:value={islandData}
+										></textarea>
+									</td>
+								{/if}
 							</tr>
 						{/each}
 					</table>
+
 					<hr />
 					<textarea bind:value={data}></textarea><br />
 					<div id="buttonGrid">

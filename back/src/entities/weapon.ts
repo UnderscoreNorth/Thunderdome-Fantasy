@@ -61,7 +61,7 @@ export function getWeapon(value: number) {
           perform() {
             this.player.stats.energy -= Math.random() * 20;
             this.player.stats.magicExp += Math.random() * 20;
-            this.player.statusMessage = "practices magic";
+            this.player.logMsg("practices magic");
             this.player.equip.weapon.rangeBonus += Math.random();
             if (this.player.equip.weapon.rangeBonus > 10)
               this.player.equip.weapon.rangeBonus = 10;

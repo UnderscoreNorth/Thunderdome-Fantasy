@@ -43,7 +43,7 @@ export class RestAction extends Action {
       Math.sqrt(this.player.stats.energy / this.player.stats.maxEnergy) *
       this.player.stats.maxEnergy;
     this.player.stats.health += Math.random() * 2;
-    this.player.statusMessage = "rests";
+    this.player.logMsg("rests");
   }
 }
 
@@ -60,10 +60,13 @@ export class SleepAction extends RestAction {
     //wake up
     if (this.turns > 1) {
       // log_message(this.player.name + " continues sleeping");
-      this.player.statusMessage = "sleeping";
+      this.player.logMsg("sleeping");
+      this.player.situation.lastSlept--;
+      if (this.player.situation.lastSlept < 0)
+        this.player.situation.lastSlept = 0;
     } else {
       this.player.situation.lastSlept = 0;
-      this.player.statusMessage = "woke up";
+      this.player.logMsg("woke up");
     }
   }
 }

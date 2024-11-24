@@ -158,42 +158,22 @@ export class MoveAction extends Action {
       //destination coords
       targetX = this.player.situation.x * 1 + shiftX;
       targetY = this.player.situation.y * 1 + shiftY;
-      if (
-        targetX > game.diameter ||
-        targetY > game.diameter ||
-        targetX < 0 ||
-        targetY < 0
-      ) {
-        console.log(
-          this.player.situation.x,
-          this.player.situation.y,
-          dist,
-          moveDist,
-          targetX,
-          targetY,
-          shiftX,
-          shiftY,
-          distX,
-          distY
-        );
-      }
     }
 
     this.player.moveToCoords(targetX, targetY);
-    //this.player.stats.energy -= Math.floor(Math.random() * 5 + 2);
     switch (getTerrain(Math.round(targetX), Math.round(targetY)).type) {
       case "water":
-        this.player.statusMessage = "swimming";
+        this.player.logMsg("swimming");
         break;
       case "mtn":
-        this.player.statusMessage = "hiking";
+        this.player.logMsg("hiking");
         break;
       default:
-        this.player.statusMessage = "moving";
+        this.player.logMsg("moving");
         break;
     }
-    if (this.priority == 3) this.player.statusMessage = "escaping fight";
-    if (this.priority == 18) this.player.statusMessage = "escaping fire";
+    if (this.priority == 3) this.player.logMsg("escaping fight");
+    if (this.priority == 18) this.player.logMsg("escaping fire");
     this.player.stats.energy -= Math.random() * 2 * this.speedModifier;
     // this.player.apply_all_effects("move");
   }
@@ -231,7 +211,7 @@ export class FollowAction extends MoveAction {
   }
   findPlayer() {
     if (!this.player.situation.awareOf.includes(this.target)) {
-      this.player.statusMessage = "Lost sight of " + this.target.name;
+      this.player.logMsg("Lost sight of " + this.target.name);
       this.turns = 1;
       return;
     }
@@ -242,6 +222,6 @@ export class FollowAction extends MoveAction {
   postPerform(): void {
     super.perform();
     if (this.player.situation.awareOf.includes(this.target))
-      this.player.statusMessage = "following " + this.target.name;
+      this.player.logMsg("following " + this.target.name);
   }
 }

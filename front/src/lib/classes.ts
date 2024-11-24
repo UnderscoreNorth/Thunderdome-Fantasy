@@ -30,7 +30,6 @@ export type Char = {
 	group: string;
 	id: number;
 	img: string;
-	statusMessage: string;
 	stats: {
 		health: number;
 		maxHealth: number;
@@ -67,7 +66,7 @@ export type Char = {
 	};
 	death: string;
 	path?: Array<[number, number]>;
-	log: string[];
+	log: Array<[string, string]>;
 };
 export const game = writable<Game>();
 export const selectedCharID = writable<number | undefined>(undefined);

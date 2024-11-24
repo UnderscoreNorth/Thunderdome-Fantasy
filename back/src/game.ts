@@ -15,10 +15,12 @@ export const newGameData: {
   diameter: number;
   chars: Array<{ name: string; img: string; group: string }>;
   timeLength: number;
+  islandNames: string[];
 } = {
   diameter: 20,
   chars: [],
   timeLength: 17280,
+  islandNames: [],
 };
 export const game: {
   chars: Array<Char>;
@@ -43,7 +45,7 @@ export const game: {
   burned: string[];
 } = {
   chars: [],
-  map: new Terrain(20),
+  map: new Terrain(20, []),
   diameter: 20,
   playerDistTable: [],
   baseFightChance: 50,
@@ -69,7 +71,7 @@ export function generateGame() {
   game.chars = [];
   game.diameter = newGameData.diameter;
   game.radius = newGameData.diameter;
-  game.map = new Terrain(newGameData.diameter);
+  game.map = new Terrain(newGameData.diameter, newGameData.islandNames);
   game.timeLength = newGameData.timeLength;
   game.msg = "";
   game.toBurn = [];
@@ -231,7 +233,6 @@ export function toJson() {
           group: x.group,
           id: x.id,
           img: x.img,
-          statusMessage: x.statusMessage,
           stats: x.stats,
           situation: {
             x: x.situation.x,
@@ -299,6 +300,7 @@ export function newGame(data: any) {
   newGameData.chars = data.chars;
   newGameData.diameter = data.diameter;
   newGameData.timeLength = data.days * 24 * 60;
+  newGameData.islandNames = data.islandNames;
   game.newGame = true;
   turn();
 }

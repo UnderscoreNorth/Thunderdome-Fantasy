@@ -17,7 +17,7 @@ export class Char {
   img: string;
   group: string;
   id: any;
-  log: string[];
+  log: Array<[string, string]>;
   stats: {
     health: number;
     maxHealth: number;
@@ -61,7 +61,6 @@ export class Char {
   plannedAction?: Action;
   currentAction?: Action;
   lastAction?: Action;
-  statusMessage: string;
   death: string;
   dead: boolean;
   constructor(
@@ -121,7 +120,6 @@ export class Char {
     this.equip = {};
     this.death = "";
     this.dead = false;
-    this.statusMessage = "";
     this.visionCheck(this.x(), this.y());
   }
   //other players
@@ -160,7 +158,6 @@ export class Char {
       this.situation.vision = new Set();
       this.visionCheck(this.x(), this.y());
     }
-    this.statusMessage = "";
     this.lastAction = this?.currentAction;
     if (this.currentAction && this.currentAction.complete) {
       this.currentAction = undefined;
@@ -211,17 +208,6 @@ export class Char {
     this.situation.been.add(`${this.x()},${this.y()}`);
     getTerrain(this.x(), this.y())?.terrainCheck(this);
     this.limitCheck();
-    if (this.statusMessage == "") {
-      this.statusMessage = "does nothing";
-    } else {
-      this.log.push(
-        `Day ${game.day.toString().padStart(2, " ")} ${game.hour
-          .toString()
-          .padStart(2, "0")}:${game.minute.toString().padStart(2, "0")} - ${
-          this.statusMessage
-        }`
-      );
-    }
     if (this.currentAction) this.currentAction.postPerform();
   }
   x() {
@@ -260,6 +246,14 @@ export class Char {
       }
       d++;
     } while (d <= game.maxPathFind * 1.5);
+  }
+  logMsg(str: string) {
+    this.log.push([
+      `${game.day.toString().padStart(2, " ")} ${game.hour
+        .toString()
+        .padStart(2, "0")}:${game.minute.toString().padStart(2, "0")}`,
+      str,
+    ]);
   }
 
   explore() {

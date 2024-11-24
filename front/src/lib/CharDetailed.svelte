@@ -55,27 +55,27 @@
 		<tr>
 			<td><i>{isNaN(parseInt(char.group)) ? char.group : 'Solo'}</i></td>
 		</tr>
-		<tr>
-			<td
-				>{#if char.equip.weapon?.name}
+		{#if char.equip.weapon?.name}
+			<tr>
+				<td>
 					<Icon icon={char.equip.weapon?.name} /> Uses: {char.equip.weapon.uses}
-				{/if}</td
-			>
-		</tr>
-		<tr>
-			<td
-				>{#if char.equip.armor?.name}
+				</td>
+			</tr>
+		{/if}
+		{#if char.equip.armor?.name}
+			<tr>
+				<td>
 					<Icon icon={char.equip.armor?.name + 'Armor'} /> Uses: {char.equip.armor.uses}
-				{/if}</td
-			>
-		</tr>
+				</td>
+			</tr>
+		{/if}
 	</table>
 	<div class="log">
 		Log:
 		<hr />
 		<div class="msgs">
 			{#each char.log.reverse() as msg}
-				<div>{msg}</div>
+				<div>Day {msg[0] + ' - ' + msg[1]}</div>
 			{/each}
 		</div>
 	</div>

@@ -31,15 +31,14 @@ export class LootAction extends Action {
       if (roll(choices) == "weapon") {
         this.player.equip.weapon = getWeapon(this.tile.value);
         this.player.equip.weapon.owner = this.player;
-        this.player.statusMessage = "equips " + this.player.equip.weapon.name;
+        this.player.logMsg("equips " + this.player.equip.weapon.name);
       } else {
         this.player.equip.armor = getArmor(this.tile.value);
         this.player.equip.armor.owner = this.player;
-        this.player.statusMessage =
-          "equips " + this.player.equip.armor.name + " armor";
+        this.player.logMsg("equips " + this.player.equip.armor.name + " armor");
       }
     } else {
-      this.player.statusMessage = "found nothing in " + this.tile.icon;
+      this.player.logMsg("found nothing in " + this.tile.icon);
     }
   }
 }

@@ -156,7 +156,7 @@ export class Terrain {
   islands: Record<string, Array<string>>;
   lakes: Record<string, Array<string>>;
   ocean: Array<string>;
-  constructor(diameter: number) {
+  constructor(diameter: number, islandNames: string[]) {
     this.array = [];
     this.seen = [];
     this.diameter = diameter;
@@ -381,53 +381,29 @@ export class Terrain {
         }
       }
     } while (change);
-
-    let prefix = [
-      "Horai",
-      "Macross",
-      "Chasm",
-      "Kuril",
-      "Nanpo",
-      "Ryukyu",
-      "Shikoku",
-      "Honshu",
-      "Uguu",
-      "Kanto",
-      "Kyuushuu",
-      "Okinawa",
-      "Cinnabar",
-      "Greed",
-      "Aincrad",
-      "The Lost",
-      `Roshi's `,
-      "Zevil",
-      "Boin",
-      "Taiga",
-      "Ami",
-      "Minori",
-    ];
-    shuffle(prefix);
+    shuffle(islandNames);
+    let islands: Array<{ s: number; name: string }> = [];
     for (let name in this.islands) {
       let tiles = this.islands[name];
+      islands.push({ s: tiles.length, name });
+    }
+    islands.sort((a, b) => {
+      return b.s - a.s;
+    });
+    for (let i = 0; i < islands.length; i++) {
+      let island = islands[i];
       let newName = "";
-      if (tiles.length > 50) {
-        do {
-          if (prefix.length) {
-            newName = prefix[0];
-            prefix.shift();
-          } else {
-            newName = name;
-          }
-        } while (this.islands[newName] !== undefined);
+      if (islandNames.length && island.s >= 50) {
+        newName = islandNames.splice(0, 1)[0];
       } else {
-        newName = "--" + name;
+        newName = "--" + island.name;
       }
-      for (const xy of tiles) {
+      this.islands[newName] = this.islands[island.name];
+      for (const xy of this.islands[newName]) {
         let [x, y] = fromXY(xy);
         this.array[x][y].groupID = newName;
       }
-      this.islands[newName] = tiles;
-      delete this.islands[name];
+      delete this.islands[island.name];
     }
     console.log("Number of islands: " + Object.values(this.islands).length);
     //Determining Lakes
