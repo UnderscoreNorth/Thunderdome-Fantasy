@@ -225,36 +225,47 @@
 	}
 	function scroll(e: WheelEvent) {
 		let zoom = $view.zoom;
-		let dir = e.deltaY > 0 ? 1 : -1;
 		zoom -= e.deltaY / 1000;
 		if (zoom < 1) zoom = 1;
 		if (zoom > 3) zoom = 3;
-		let x = $view.x - (Math.ceil((e.offsetX / h) * 3) - 2) * 10 * dir;
-		let y = $view.y - (Math.ceil((e.offsetY / h) * 3) - 2) * 10 * dir;
-		if (x < 0) x = 0;
-		if (x > 100) x = 100;
-		if (y < 0) y = 0;
-		if (y > 100) y = 100;
-		$view.zoom = zoom;
-		/*view.set({
-			x,
-			y,
-			zoom
-		});*/
+		changeZoom(zoom);
 	}
 	let drag = false;
 	let startX = 0;
 	let startY = 0;
 	let xDiff = 0;
 	let yDiff = 0;
+	let initTouchDistance = -1;
+	let initZoom = 0;
 	function doubleClick(e: MouseEvent) {
 		let { zoom, x, y } = $view;
 		zoom += 0.08;
 		if (zoom < 1) zoom = 1;
 		if (zoom > 3) zoom = 3;
-		$view.zoom = zoom;
+		changeZoom(zoom);
+	}
+	function changeZoom(z: number) {
+		view.update((v) => {
+			let initOffset = (v.renderSize - v.renderSize / v.zoom) / 2;
+			let afterOffset = (v.renderSize - v.renderSize / z) / 2;
+			v.x += initOffset - afterOffset;
+			v.y += initOffset - afterOffset;
+			v.zoom = z;
+			return v;
+		});
+	}
+	function getPinchDistance(t: TouchList) {
+		return Math.sqrt(
+			Math.pow(t[0].clientX - t[1].clientX, 2) + Math.pow(t[0].clientY - t[1].clientY, 2)
+		);
 	}
 	function dragStart(e: MouseEvent | TouchEvent) {
+		if (e instanceof TouchEvent && e.targetTouches.length == 2) {
+			initTouchDistance = getPinchDistance(e.targetTouches);
+			initZoom = $view.zoom;
+			drag = true;
+			return;
+		}
 		drag = true;
 		if (e instanceof MouseEvent) {
 			startX = e.offsetX;
@@ -271,6 +282,16 @@
 		}
 	}
 	function dragMove(e: MouseEvent | TouchEvent) {
+		if (e instanceof TouchEvent && e.targetTouches.length == 2 && initTouchDistance >= 0) {
+			let zoom = $view.zoom;
+			let d = getPinchDistance(e.targetTouches);
+			zoom = (initZoom * d) / initTouchDistance;
+			if (zoom < 1) zoom = 1;
+			if (zoom > 3) zoom = 3;
+			changeZoom(zoom);
+			e.preventDefault();
+			return;
+		}
 		let dragSpeed = $game.diameter * 5 * $view.zoom;
 		if (drag) {
 			let offsetX = e instanceof MouseEvent ? e.offsetX : e.targetTouches[0].clientX;
@@ -282,6 +303,7 @@
 		}
 	}
 	function dragEnd(e: MouseEvent | TouchEvent) {
+		initTouchDistance = -1;
 		if (drag) {
 			drag = false;
 			view.update((v) => {
