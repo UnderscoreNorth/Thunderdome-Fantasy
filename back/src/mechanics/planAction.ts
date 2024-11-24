@@ -106,10 +106,11 @@ export function planAction(char: Char) {
       char.situation.lastSlept > 24 * 4) &&
     getTerrain(char.x(), char.y()).elevation >= 0
   ) {
-    goals.push([
-      { type: "sleep", goal: char },
-      Math.pow(char.situation.lastSlept / 4 - 16, 2) * 10,
-    ]);
+    if (char.situation.lastSlept > 16)
+      goals.push([
+        { type: "sleep", goal: char },
+        Math.pow(char.situation.lastSlept / 4 - 16, 2) * 10,
+      ]);
   }
   //choose new action
   let goal = roll(goals);

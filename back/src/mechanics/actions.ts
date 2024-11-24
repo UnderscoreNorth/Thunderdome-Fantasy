@@ -61,7 +61,7 @@ export class SleepAction extends RestAction {
     if (this.turns > 1) {
       // log_message(this.player.name + " continues sleeping");
       this.player.logMsg("sleeping");
-      this.player.situation.lastSlept--;
+      this.player.situation.lastSlept -= 2;
       if (this.player.situation.lastSlept < 0)
         this.player.situation.lastSlept = 0;
     } else {

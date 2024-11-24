@@ -36,7 +36,13 @@ export class FightAction extends Action {
 }
 export function fight_target(tP: Char, oP: Char) {
   let atk = launch_attack(tP, oP);
-  tP.logMsg(atk + oP.name);
+  if (atk > 0) {
+    tP.logMsg("hits " + oP.name + " for " + Math.round(atk * 10) / 10);
+  } else if (atk == 0) {
+    tP.logMsg("misses " + oP.name);
+  } else {
+    tP.logMsg("is out of range to attack " + oP.name);
+  }
   if (oP.stats.health <= 0) {
     tP.stats.kills++;
     tP.logMsg("kills " + oP.name);
@@ -48,6 +54,13 @@ export function fight_target(tP: Char, oP: Char) {
     }
     let atk = launch_attack(oP, tP);
     if (tP.stats.health <= 0) {
+      if (atk > 0) {
+        oP.logMsg("hits " + tP.name + " back for " + Math.round(atk * 10) / 10);
+      } else if (atk == 0) {
+        oP.logMsg("misses a counter on " + tP.name);
+      } else {
+        oP.logMsg("is out of range to counterattack " + tP.name);
+      }
       oP.stats.kills++;
       oP.logMsg("kills " + tP.name);
       tP.logMsg("killed by " + oP.name + "'s counterattack");
@@ -91,11 +104,11 @@ function launch_attack(attacker: Char, defender: Char) {
       attacker.stats[combatType + "Exp"] += (dmg * xpBonus) / 3;
       defender.stats.maxHealth += Math.round(Math.random());
       attacker.stats.energy -= Math.random() * 10 * xpBonus;
-      return "attacks ";
+      return dmg * defBonus;
     } else {
-      return "misses ";
+      return 0;
     }
   } else {
-    return "is out of range of ";
+    return -1;
   }
 }
