@@ -161,7 +161,7 @@ export async function turn() {
   log("Turn End");
   game.elapsedTime = game.minute + game.hour * 60 + game.day * 60 * 24;
   game.radius = Math.max(
-    5,
+    2,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
       game.diameter *
       0.8

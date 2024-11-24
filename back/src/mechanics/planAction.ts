@@ -41,7 +41,7 @@ export function planAction(char: Char) {
       if (!char.situation.inRangeOf.includes(oChar))
         goals.push([
           { goal: oChar, type: "follow" },
-          Math.round((200 - oChar.stats.health) / 10),
+          Math.round((200 - oChar.stats.health) / 10) * (game.day / 2),
         ]);
     }
     if (char.equip.weapon && char.equip.weapon.action) {
