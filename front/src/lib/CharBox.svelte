@@ -34,7 +34,7 @@
 <tr>
 	<td colspan="2">
 		{char.name}<br />
-		{char.death ? char.death : (char.log?.[0]?.[1] ?? '')}</td
+		{char.death ? char.death : (char.log?.[char.log.length - 1]?.[1] ?? '')}</td
 	>
 </tr>
 
