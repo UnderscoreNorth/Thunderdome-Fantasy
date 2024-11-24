@@ -12,6 +12,8 @@
 		let hue = 0;
 		let light = cell.elevation * 10 + 10;
 		let saturation = 80;
+		let half = $game.diameter / 2;
+		let d = 1 - (Math.abs(cell.y - half) - half * 0.6) / (half * 0.4);
 		if (cell.type == 'water') {
 			light = (cell.elevation + 3) * 10 + 10;
 			hue = 222;
@@ -19,16 +21,18 @@
 			hue = 53;
 			light = 45;
 			saturation = 50;
+			if (Math.abs(cell.y - half) > half * 0.6) {
+				saturation = Math.min(saturation, Math.pow(d, 2) * saturation);
+				light += Math.pow(1 - d, 2) * (5 - cell.elevation) * 10;
+			}
 		} else if (cell.type == 'plain' || cell.type == 'tree') {
 			saturation = (3 - cell.elevation) * 10 + 10;
 			light = (2 - cell.elevation) * 7.5 + 20;
-			/*if (Math.abs(cell.y - $game.diameter / 2) > ($game.diameter / 2) * 0.5) {
-				saturation = Math.min(
-					90 * (1 - Math.abs(cell.y - $game.diameter / 8) / ($game.diameter / 8)) + 10,
-					saturation
-				);
-				light = 95 - cell.elevation * 5;
-			}*/
+
+			if (Math.abs(cell.y - half) > half * 0.6) {
+				saturation = Math.min(saturation, Math.pow(d, 2) * saturation);
+				light += Math.pow(1 - d, 2) * (5 - cell.elevation) * 10;
+			}
 			hue = 112;
 		} else if (cell.type == 'mtn') {
 			light = (cell.elevation + 1) * 10 + 10;
@@ -68,6 +72,12 @@
 			hue = 110 + ((cell.x + cell.y) % 3) * 12;
 			saturation = 100 - ((cell.x + cell.y) % 3) * 12;
 			light = 35 - ((cell.x + cell.y) % 3) * 2;
+			let half = $game.diameter / 2;
+			let d = 1 - (Math.abs(cell.y - half) - half * 0.6) / (half * 0.4);
+			if (Math.abs(cell.y - half) > half * 0.6) {
+				saturation = Math.min(saturation, 10 + Math.pow(d, 2) * (saturation - 10));
+				//light += Math.pow((Math.abs(cell.y - half) - half * 0.7) / (half * 0.3), 1) * 40;
+			}
 		} else if (cell.icon == '🔥') {
 			hue = Math.random() * 25;
 		} else if (cell.icon == 'cave') {
