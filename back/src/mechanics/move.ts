@@ -159,21 +159,24 @@ export class MoveAction extends Action {
       targetX = this.player.situation.x * 1 + shiftX;
       targetY = this.player.situation.y * 1 + shiftY;
     }
-
-    this.player.moveToCoords(targetX, targetY);
-    switch (getTerrain(Math.round(targetX), Math.round(targetY)).type) {
-      case "water":
-        this.player.logMsg("swimming");
-        break;
-      case "mtn":
-        this.player.logMsg("hiking");
-        break;
-      default:
-        this.player.logMsg("moving");
-        break;
+    if (this.priority == 3) {
+      this.player.logMsg("escaping fight");
+    } else if (this.priority == 18) {
+      this.player.logMsg("escaping fire");
+    } else {
+      this.player.moveToCoords(targetX, targetY);
+      switch (getTerrain(Math.round(targetX), Math.round(targetY)).type) {
+        case "water":
+          this.player.logMsg("swimming");
+          break;
+        case "mtn":
+          this.player.logMsg("hiking");
+          break;
+        default:
+          this.player.logMsg("moving");
+          break;
+      }
     }
-    if (this.priority == 3) this.player.logMsg("escaping fight");
-    if (this.priority == 18) this.player.logMsg("escaping fire");
     this.player.stats.energy -= Math.random() * 2 * this.speedModifier;
     // this.player.apply_all_effects("move");
   }

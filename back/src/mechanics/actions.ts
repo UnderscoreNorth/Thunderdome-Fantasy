@@ -57,9 +57,11 @@ export class SleepAction extends RestAction {
 
   perform() {
     super.perform();
-    //wake up
+    if (this.player.log[this.player.log.length - 1][1] == "rests")
+      this.player.log.splice(this.player.log.length - 1);
     if (this.turns > 1) {
       // log_message(this.player.name + " continues sleeping");
+
       this.player.logMsg("sleeping");
       this.player.situation.lastSlept -= 2;
       if (this.player.situation.lastSlept < 0)

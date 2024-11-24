@@ -53,14 +53,14 @@ export function fight_target(tP: Char, oP: Char) {
       oP.currentAction = undefined;
     }
     let atk = launch_attack(oP, tP);
+    if (atk > 0) {
+      oP.logMsg("hits " + tP.name + " back for " + Math.round(atk * 10) / 10);
+    } else if (atk == 0) {
+      oP.logMsg("misses a counter on " + tP.name);
+    } else {
+      oP.logMsg("is out of range to counterattack " + tP.name);
+    }
     if (tP.stats.health <= 0) {
-      if (atk > 0) {
-        oP.logMsg("hits " + tP.name + " back for " + Math.round(atk * 10) / 10);
-      } else if (atk == 0) {
-        oP.logMsg("misses a counter on " + tP.name);
-      } else {
-        oP.logMsg("is out of range to counterattack " + tP.name);
-      }
       oP.stats.kills++;
       oP.logMsg("kills " + tP.name);
       tP.logMsg("killed by " + oP.name + "'s counterattack");

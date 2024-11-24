@@ -10,9 +10,7 @@ if (!existsSync("./games")) mkdirSync("./games");
 if (!config.freq) throw "Missing freq in config.json";
 if (!config.pass) throw "Missing pass in config.json";
 if (!config.port) throw "Missing port in config.json";
-setInterval(() => {
-  turn();
-}, config.freq);
+runTurn();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(compression({ filter: shouldCompress }));
@@ -43,5 +41,11 @@ app.use("/newGame", async (req, res, next) => {
   newGame(req.body);
   res.send({});
 });
+function runTurn() {
+  turn();
+  setTimeout(() => {
+    runTurn();
+  }, config.freq - (new Date().getTime() % config.freq));
+}
 
 export default app;

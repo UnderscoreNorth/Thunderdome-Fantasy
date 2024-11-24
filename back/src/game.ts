@@ -110,7 +110,7 @@ export function generateGame() {
   game.ready = true;
 }
 
-export async function turn() {
+export function turn() {
   if (!game.ready) return;
   if (game.newGame) {
     game.ready = false;
@@ -119,10 +119,10 @@ export async function turn() {
     game.ready = true;
     return;
   }
+  if (!game.name) return;
   let remainingGroups = new Set(
     game.chars.filter((i) => !i.dead).map((i) => i.group)
   ).size;
-  console.log("Remaining groups: ", remainingGroups);
   if (remainingGroups <= 1) {
     if (!game.complete) {
       game.complete = true;
@@ -136,7 +136,7 @@ export async function turn() {
         JSON.stringify(toJson())
       );
       setTimeout(() => {
-        generateGame();
+        if (game.complete) generateGame();
       }, 900000);
     }
     return;
