@@ -71,7 +71,7 @@ export function generateGame() {
   game.chars = [];
   game.diameter = newGameData.diameter;
   game.radius = newGameData.diameter;
-  game.map = new Terrain(newGameData.diameter, newGameData.islandNames);
+  game.map = new Terrain(newGameData.diameter, [...newGameData.islandNames]);
   game.timeLength = newGameData.timeLength;
   game.msg = "";
   game.toBurn = [];

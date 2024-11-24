@@ -26,10 +26,12 @@
 				}
 			} else if (sort == 'value') {
 				if (a.death && b.death) {
-					if (a.log?.[0]?.[0] == b.log?.[0]?.[0]) {
+					let lastA = a.log[a.log.length - 1][0];
+					let lastB = b.log[b.log.length - 1][0];
+					if (lastA == lastB) {
 						return 0;
 					} else {
-						return b.log?.[0]?.[0] > a.log?.[0]?.[0] ? 1 : -1;
+						return lastB > lastA ? 1 : -1;
 					}
 				} else {
 					return (
@@ -153,7 +155,7 @@
 	app {
 		display: flex;
 		flex-direction: row;
-		height: 100vh;
+		height: 100svh;
 		width: 100vw;
 	}
 	#sortButton:hover {
@@ -176,8 +178,9 @@
 		background: #202020;
 		display: grid;
 		grid-template-columns: auto;
-		grid-template-rows: 1.2rem auto auto;
-		height: 100vh;
+		grid-template-rows: min-content auto auto;
+		gap: 5px;
+		height: 100svh;
 		overflow-y: hidden;
 		z-index: 2;
 	}
@@ -203,5 +206,10 @@
 	}
 	:global(svg) {
 		color: rgb(190, 123, 0);
+	}
+	@media (orientation: portrait) {
+		app {
+			flex-direction: column;
+		}
 	}
 </style>

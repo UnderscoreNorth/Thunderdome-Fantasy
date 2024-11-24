@@ -254,10 +254,15 @@
 		if (zoom > 3) zoom = 3;
 		$view.zoom = zoom;
 	}
-	function dragStart(e: MouseEvent) {
+	function dragStart(e: MouseEvent | TouchEvent) {
 		drag = true;
-		startX = e.offsetX;
-		startY = e.offsetY;
+		if (e instanceof MouseEvent) {
+			startX = e.offsetX;
+			startY = e.offsetY;
+		} else {
+			startX = e.targetTouches[0].clientX;
+			startY = e.targetTouches[0].clientY;
+		}
 		let names = Array.from(document.getElementsByClassName('islandName'))
 			.concat(Array.from(document.getElementsByClassName('gameBar')))
 			.concat(Array.from(document.getElementsByTagName('char'))) as HTMLDivElement[];
@@ -265,16 +270,18 @@
 			name.style.pointerEvents = 'none';
 		}
 	}
-	function dragMove(e: MouseEvent) {
+	function dragMove(e: MouseEvent | TouchEvent) {
 		let dragSpeed = $game.diameter * 5 * $view.zoom;
 		if (drag) {
-			xDiff = ((e.offsetX - startX) / h) * dragSpeed;
+			let offsetX = e instanceof MouseEvent ? e.offsetX : e.targetTouches[0].clientX;
+			let offsetY = e instanceof MouseEvent ? e.offsetY : e.targetTouches[0].clientY;
+			xDiff = ((offsetX - startX) / h) * dragSpeed;
 			$view.xDiff = xDiff;
-			yDiff = ((e.offsetY - startY) / h) * dragSpeed;
+			yDiff = ((offsetY - startY) / h) * dragSpeed;
 			$view.yDiff = yDiff;
 		}
 	}
-	function dragEnd(e: MouseEvent) {
+	function dragEnd(e: MouseEvent | TouchEvent) {
 		if (drag) {
 			drag = false;
 			view.update((v) => {
@@ -302,13 +309,16 @@
 	on:mousedown={dragStart}
 	on:mouseup={dragEnd}
 	on:mouseleave={dragEnd}
+	on:touchstart={dragStart}
+	on:touchmove={dragMove}
+	on:touchend={dragEnd}
 >
 	<canvas id="canvas" height={$view.renderSize} width={$view.renderSize}> </canvas>
 </div>
 
 <style>
 	canvas {
-		height: 100vh;
+		height: min(100svh, 100vw);
 		aspect-ratio: 1;
 	}
 	:global(mapicon.glow svg) {
@@ -318,6 +328,6 @@
 	}
 	div {
 		position: relative;
-		height: 100vh;
+		height: min(100svh, 100vw);
 	}
 </style>

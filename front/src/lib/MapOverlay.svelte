@@ -76,59 +76,68 @@
 	}
 </script>
 
-{#each islandNames as island}
-	<div
-		on:click={() => ($selectedIsland = $selectedIsland == island.i ? undefined : island.i)}
-		class="islandName"
-		style:font-size={island.s * 1.5 + 'vh'}
-		style:left={$view.zoom * (u * island.x + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
-			'vh'}
-		style:top={$view.zoom * (u * island.y + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
-			'vh'}
-	>
-		<div>{island.name}</div>
-	</div>
-{/each}
-<div>
-	{#each $game?.chars ?? [] as char (char.id)}
-		<char
-			on:click={() => {
-				selectChar(char);
-			}}
-			class={[char.id == $selectedCharID ? 'sel' : '', char.death ? 'dead' : ''].join(' ')}
-			style:background-image={`url(${char.img})`}
-			style:left={$view.zoom *
-				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
-				'vh'}
-			style:top={$view.zoom *
-				(u * (char.situation.y - 1) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
-				'vh'}
-			style:height={u * 3 * $view.zoom + 'vh'}
-		/>
+<div id="mapOverlay">
+	{#each islandNames as island}
 		<div
-			class="gameBar"
-			style:left={$view.zoom *
-				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
-				'vh'}
-			style:top={$view.zoom *
-				(u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
-				'vh'}
-			style:width={u * (char.stats.health / char.stats.maxHealth) * 3 * $view.zoom + 'vh'}
-			style:background={'red'}
-		/>
-		<div
-			class="gameBar"
-			style:left={$view.zoom *
-				(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
-				'vh'}
-			style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}vh + 3px)`}
-			style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 * $view.zoom + 'vh'}
-			style:background={'green'}
-		/>
+			on:click={() => ($selectedIsland = $selectedIsland == island.i ? undefined : island.i)}
+			class="islandName"
+			style:font-size={island.s * 1.5 + 'rem'}
+			style:left={$view.zoom * (u * island.x + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+				'%'}
+			style:top={$view.zoom * (u * island.y + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+				'%'}
+		>
+			<div>{island.name}</div>
+		</div>
 	{/each}
+	<div>
+		{#each $game?.chars ?? [] as char (char.id)}
+			<char
+				on:click={() => {
+					selectChar(char);
+				}}
+				class={[char.id == $selectedCharID ? 'sel' : '', char.death ? 'dead' : ''].join(' ')}
+				style:background-image={`url(${char.img})`}
+				style:left={$view.zoom *
+					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					'%'}
+				style:top={$view.zoom *
+					(u * (char.situation.y - 1) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+					'%'}
+				style:height={u * 3 * $view.zoom + '%'}
+			/>
+			<div
+				class="gameBar"
+				style:left={$view.zoom *
+					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					'%'}
+				style:top={$view.zoom *
+					(u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+					'%'}
+				style:width={u * (char.stats.health / char.stats.maxHealth) * 3 * $view.zoom + '%'}
+				style:background={'red'}
+			/>
+			<div
+				class="gameBar"
+				style:left={$view.zoom *
+					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					'%'}
+				style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}% + 3px)`}
+				style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 * $view.zoom + '%'}
+				style:background={'green'}
+			/>
+		{/each}
+	</div>
 </div>
 
 <style>
+	#mapOverlay {
+		height: min(100svh, 100vw);
+		width: min(100svh, 100vw);
+		position: absolute;
+		pointer-events: none;
+		overflow: hidden;
+	}
 	char {
 		position: absolute;
 		border-radius: 50%;

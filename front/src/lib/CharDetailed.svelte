@@ -84,7 +84,7 @@
 <style>
 	.avatar {
 		height: 8rem;
-		max-height: 10vh;
+		max-height: 10svh;
 		background-size: cover;
 		aspect-ratio: 1;
 		border-radius: 50%;
@@ -101,7 +101,7 @@
 		flex-wrap: wrap;
 		gap: 5px;
 		padding: 5px;
-		font-size: 2vh;
+		font-size: 2svh;
 	}
 	.stats tr > *:nth-child(1) {
 		text-align: right;
@@ -116,7 +116,7 @@
 		width: 100%;
 	}
 	.log .msgs {
-		max-height: 40vh;
+		max-height: 40svh;
 		overflow-y: scroll;
 	}
 </style>
