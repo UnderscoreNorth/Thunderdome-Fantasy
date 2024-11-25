@@ -41,7 +41,7 @@ export class Char {
     inRangeOf: Char[];
     vision: Set<string>;
     seen: Set<string>;
-    been: Set<string>;
+    been: string[];
     dir: number;
     lastSlept: number;
   };
@@ -107,7 +107,7 @@ export class Char {
       visibility: 100,
       vision: new Set(),
       seen: new Set(),
-      been: new Set(),
+      been: [],
       dir: Math.random() * 360,
       lastSlept: 0,
     };
@@ -215,7 +215,11 @@ export class Char {
       this.situation.vision = new Set();
       this.visionCheck(this.x(), this.y());
     }
-    this.situation.been.add(`${this.x()},${this.y()}`);
+    this.situation.been.push(
+      `${Math.round(this.situation.x * 10) / 10},${
+        Math.round(this.situation.y * 10) / 10
+      }`
+    );
     getTerrain(this.x(), this.y())?.terrainCheck(this);
     this.limitCheck();
     if (this.currentAction) this.currentAction.postPerform();
@@ -292,7 +296,17 @@ export class Char {
       ) {
         priority *= 2;
       }
-      if (this.situation.been.has(xy)) priority /= 2;
+      if (
+        this.situation.been
+          .map((i) =>
+            i
+              .split(",")
+              .map((j) => Math.round(parseInt(j)))
+              .join(",")
+          )
+          .includes(xy)
+      )
+        priority /= 2;
       priorities.push([xy, priority]);
     }
     if (priorities.length == 0) console.log(nearby);

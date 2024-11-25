@@ -24,6 +24,7 @@ export type TerrainType = {
 	type: string;
 	elevation: number;
 	glow: boolean;
+	groupID: string;
 };
 export type Char = {
 	name: string;
@@ -43,6 +44,7 @@ export type Char = {
 		rangeExp: number;
 		magicExp: number;
 		survivalExp: number;
+		combatRange: number;
 	};
 	situation: {
 		x: number;
@@ -58,6 +60,7 @@ export type Char = {
 		weapon?: {
 			name: string;
 			uses: number;
+			rangeBonus: number;
 		};
 		armor?: {
 			name: string;

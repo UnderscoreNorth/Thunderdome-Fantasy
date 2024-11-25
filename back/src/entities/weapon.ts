@@ -9,7 +9,24 @@ export type Wpn = Titem & {
 export function getWeapon(value: number) {
   let weaponOdds: Array<[Wpn, number]> = [
     [
-      { name: "sword", dmgBonus: 7.5, uses: [2, 50], value: 1, type: "melee" },
+      {
+        name: "sword",
+        dmgBonus: 7.5,
+        uses: [999, 999],
+        value: 1,
+        type: "melee",
+      },
+      30,
+    ],
+    [
+      {
+        name: "spear",
+        dmgBonus: 4,
+        rangeBonus: 0.75,
+        uses: [999, 999],
+        value: 1,
+        type: "melee",
+      },
       30,
     ],
     [

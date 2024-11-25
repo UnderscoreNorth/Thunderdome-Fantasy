@@ -734,7 +734,17 @@ export class Terrain {
           let [x2, y2] = fromXY(xy);
           if (Math.abs(char.x() - x2) > game.maxPathFind) continue;
           if (Math.abs(char.y() - y2) > game.maxPathFind) continue;
-          if (!char.situation.been.has(xy)) options.push([xy, 1]);
+          if (
+            !char.situation.been
+              .map((i) =>
+                i
+                  .split(",")
+                  .map((j) => Math.round(parseInt(j)))
+                  .join(",")
+              )
+              .includes(xy)
+          )
+            options.push([xy, 1]);
         }
         let res = roll(options);
         if (res !== "leave") {
@@ -820,7 +830,7 @@ export class Terrain {
   getTime(tiles: TerrainType[]) {
     let arr = tiles.map((i) => {
       return {
-        speed: 1 / Math.pow(i.moveSpeedB, 2),
+        speed: (i.icon == "🔥" ? 5 : 1) / Math.pow(i.moveSpeedB, 2),
         x: i.x,
         y: i.y,
       };

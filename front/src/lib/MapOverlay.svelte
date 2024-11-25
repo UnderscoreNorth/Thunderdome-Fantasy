@@ -99,20 +99,20 @@
 				class={[char.id == $selectedCharID ? 'sel' : '', char.death ? 'dead' : ''].join(' ')}
 				style:background-image={`url(${char.img})`}
 				style:left={$view.zoom *
-					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					(u * (char.situation.x - 1.5) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
 					'%'}
 				style:top={$view.zoom *
-					(u * (char.situation.y - 1) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+					(u * (char.situation.y - 1.5) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
 					'%'}
 				style:height={u * 3 * $view.zoom + '%'}
 			/>
 			<div
 				class="gameBar"
 				style:left={$view.zoom *
-					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					(u * (char.situation.x - 1.5) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
 					'%'}
 				style:top={$view.zoom *
-					(u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
+					(u * (char.situation.y + 1.5) + ($view.y + $view.yDiff) / ($view.renderSize / 100)) +
 					'%'}
 				style:width={u * (char.stats.health / char.stats.maxHealth) * 3 * $view.zoom + '%'}
 				style:background={'red'}
@@ -120,9 +120,9 @@
 			<div
 				class="gameBar"
 				style:left={$view.zoom *
-					(u * (char.situation.x - 1) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
+					(u * (char.situation.x - 1.5) + ($view.x + $view.xDiff) / ($view.renderSize / 100)) +
 					'%'}
-				style:top={`calc(${$view.zoom * (u * (char.situation.y + 2) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}% + 3px)`}
+				style:top={`calc(${$view.zoom * (u * (char.situation.y + 1.5) + ($view.y + $view.yDiff) / ($view.renderSize / 100))}% + 3px)`}
 				style:width={u * (char.stats.energy / char.stats.maxEnergy) * 3 * $view.zoom + '%'}
 				style:background={'green'}
 			/>

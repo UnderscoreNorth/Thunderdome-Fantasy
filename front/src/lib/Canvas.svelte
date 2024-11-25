@@ -170,16 +170,7 @@
 			}
 		}
 		//log('island');
-		if ($selectedCharID !== undefined) {
-			let char = $game.chars.filter((x) => x.id == $selectedCharID)[0];
-			if (char !== undefined && char.path !== undefined) {
-				for (const [x, y] of char.path) {
-					ctx.strokeStyle = 'red';
-					ctx.lineWidth = 5 / $view.zoom;
-					ctx.strokeRect(x * u, y * u, u, u);
-				}
-			}
-		}
+
 		//log('player path');
 		for (let row of $game.map) {
 			for (let cell of row) {
@@ -202,6 +193,35 @@
 				}
 				ctx.fill(p);
 			}
+		}
+		if ($selectedCharID !== undefined) {
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+			ctx.shadowBlur = 0;
+			let char = $game.chars.filter((x) => x.id == $selectedCharID)[0];
+
+			for (const i in char.situation.been) {
+				const [x, y] = char.situation.been[i].split(',').map((j) => parseFloat(j)) as [
+					number,
+					number
+				];
+				ctx.fillStyle = `rgba(255,255,255,${Math.max(0.1, 0.8 - (char.situation.been.length - parseInt(i)) * 0.01)})`;
+				ctx.fillRect(x * u + u / 4, y * u + u / 4, u / 2, u / 2);
+			}
+			if (char !== undefined && char.path !== undefined) {
+				for (const [x, y] of char.path) {
+					//ctx.strokeStyle = 'red';
+					//ctx.lineWidth = 5 / $view.zoom;
+					//ctx.strokeRect(x * u, y * u, u, u);
+					ctx.fillStyle = 'rgba(255,215,0,.8)';
+					ctx.fillRect(x * u + u / 4, y * u + u / 4, u / 2, u / 2);
+				}
+			}
+			ctx.strokeStyle = 'rgba(200,40,40,0.5)';
+			ctx.lineWidth = 5 / $view.zoom;
+			ctx.beginPath();
+			let range = char.stats.combatRange + (char.equip?.weapon?.rangeBonus ?? 0);
+			ctx.arc(char.situation.x * u, char.situation.y * u, range * u, 0, 2 * Math.PI);
+			ctx.stroke();
 		}
 		cached.src = canvas.toDataURL('image/png');
 		setTimeout(() => {

@@ -22,13 +22,32 @@
 	import MdSettings from 'svelte-icons/md/MdSettings.svelte';
 	import MdSort from 'svelte-icons/md/MdSort.svelte';
 	import GiPocketBow from 'svelte-icons/gi/GiPocketBow.svelte';
+	import GiArrowhead from 'svelte-icons/gi/GiArrowhead.svelte';
 	export let icon: string;
 </script>
 
 {#if icon == 'pistol'}
 	<GiPistolGun />
 {:else if icon == 'sword'}
-	<GiTwoHandedSword />
+	<svg
+		fill="#000000"
+		version="1.1"
+		id="Layer_1"
+		xmlns="http://www.w3.org/2000/svg"
+		xmlns:xlink="http://www.w3.org/1999/xlink"
+		width="800px"
+		height="800px"
+		viewBox="0 0 260 260"
+		enable-background="new 0 0 260 260"
+		xml:space="preserve"
+	>
+		<path
+			d="M258,2l-16,48L97.06,181.76l-7.23-11.14l-11.68-7.58L210,18L258,2z M101.029,238.26l11.314-11.314l-31.176-48.02
+l-48.02-31.176l-11.314,11.314l31.386,31.386l-34.26,37.693c-4.464-0.586-9.138,0.82-12.568,4.249
+c-5.858,5.858-5.858,15.355,0,21.213c5.858,5.858,15.355,5.858,21.213,0c3.428-3.428,4.834-8.1,4.25-12.562l37.695-34.262
+L101.029,238.26z"
+		/>
+	</svg>
 {:else if icon == 'health'}
 	<GiHealthNormal />
 {:else if icon == 'energy'}
@@ -71,4 +90,17 @@
 	<MdSort />
 {:else if icon == 'bow'}
 	<GiPocketBow />
+{:else if icon == 'spear'}
+	<GiArrowhead />
 {/if}
+
+<style>
+	svg {
+		stroke: currentColor;
+		fill: currentColor;
+		stroke-width: 0;
+		width: 100%;
+		height: auto;
+		max-height: 100%;
+	}
+</style>

@@ -128,15 +128,13 @@ export class MoveAction extends Action {
       ).moveSpeedB * this.speedModifier;
     let moveDist = d * terrainB;
 
-    // log_message(this.name+' moves')
-    //Calculating distance from target
     let distX = this.subTargetX - this.player.situation.x;
     let distY = this.subTargetY - this.player.situation.y;
     let dist = Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2));
     let targetX = 0;
     let targetY = 0;
-    // log_message(moveDist)
-    //move towards target location
+    let moved = Math.min(dist, moveDist);
+    let remainingD = moveDist - dist;
     if (dist <= moveDist) {
       //target within reach
       targetX = this.subTargetX;
@@ -148,8 +146,6 @@ export class MoveAction extends Action {
       } else {
         this.subTargetX = this.path[0].x;
         this.subTargetY = this.path[0].y;
-        let remainingD = (moveDist - d) / terrainB;
-        if (remainingD > 0) this.subMove(remainingD);
       }
     } else {
       //target too far away
@@ -160,8 +156,8 @@ export class MoveAction extends Action {
       targetY = this.player.situation.y * 1 + shiftY;
     }
     this.player.moveToCoords(targetX, targetY);
-    this.player.stats.energy -= Math.random() * 2 * this.speedModifier;
-    // this.player.apply_all_effects("move");
+    this.player.stats.energy -= Math.random() * 2 * this.speedModifier * moved;
+    if (this.path.length && remainingD > 0) this.subMove(remainingD);
   }
   perform() {
     this.subMove(this.player.stats.moveSpeed);
