@@ -160,7 +160,7 @@
 		for (let row of $game.map) {
 			for (let cell of row) {
 				ctx.fillStyle = getBackground(cell);
-				ctx.fillRect(cell.x * u, cell.y * u, u + 1, u + 1);
+				ctx.fillRect((cell.x - 0.5) * u, (cell.y - 0.5) * u, u + 1, u + 1);
 			}
 		}
 		//log('tiles');
@@ -168,7 +168,7 @@
 			for (const xy of $game.islands[$selectedIsland]) {
 				let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
 				ctx.fillStyle = 'rgba(255,255,255,0.2)';
-				ctx.fillRect(x * u, y * u, u, u);
+				ctx.fillRect((x - 0.5) * u, (y - 0.5) * u, u, u);
 			}
 		}
 		//log('island');
@@ -179,8 +179,8 @@
 				if (!cell.icon || iconSvg[cell.icon] == undefined) continue;
 				let svg = iconSvg[cell.icon];
 				let scale = svg?.scale ?? 1;
-				let x = (cell.x - (scale - 1) / 2) * u;
-				let y = (cell.y - (scale - 1)) * u;
+				let x = (cell.x - 0.5 - (scale - 1) / 2) * u;
+				let y = (cell.y - 0.5 - (scale - 1)) * u;
 				ctx.fillStyle = getColor(cell);
 				ctx.setTransform(1, 0, 0, 1, 0, 0);
 				//ctx.scale($view.zoom, $view.zoom);
@@ -207,7 +207,7 @@
 					number
 				];
 				ctx.fillStyle = `rgba(255,255,255,${Math.max(0.1, 0.8 - (char.situation.been.length - parseInt(i)) * 0.01)})`;
-				ctx.fillRect(x * u + u / 4, y * u + u / 4, u / 2, u / 2);
+				ctx.fillRect((x - 0.5) * u + u / 4, (y - 0.5) * u + u / 4, u / 2, u / 2);
 			}
 			if (char !== undefined && char.path !== undefined) {
 				for (const [x, y] of char.path) {
@@ -215,7 +215,7 @@
 					//ctx.lineWidth = 5 / $view.zoom;
 					//ctx.strokeRect(x * u, y * u, u, u);
 					ctx.fillStyle = 'rgba(255,215,0,.8)';
-					ctx.fillRect(x * u + u / 4, y * u + u / 4, u / 2, u / 2);
+					ctx.fillRect((x - 0.5) * u + u / 4, (y - 0.5) * u + u / 4, u / 2, u / 2);
 				}
 			}
 			ctx.strokeStyle = 'rgba(200,40,40,0.5)';
