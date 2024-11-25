@@ -67,20 +67,25 @@
 			api('get?id=' + ($game?.name ?? 'new'))
 				.then((r) => {
 					if (!r.time) return undefined;
-					game.update((g) => {
-						if (g == undefined) {
-							g = r;
-						} else {
-							g = Object.assign(g, r);
-						}
-						g.chars = sortChars(g.chars);
-						for (const xy of g.burned) {
-							let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
-							g.map[x][y].icon = '🔥';
-							g.map[x][y].glow = false;
-						}
-						return g;
-					});
+					if (
+						r.time.minute !== $game?.time?.minute ||
+						r.time.hour !== $game?.time?.hour ||
+						r.time.day !== $game?.time?.day
+					)
+						game.update((g) => {
+							if (g == undefined) {
+								g = r;
+							} else {
+								g = Object.assign(g, r);
+							}
+							g.chars = sortChars(g.chars);
+							for (const xy of g.burned) {
+								let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
+								g.map[x][y].icon = '🔥';
+								g.map[x][y].glow = false;
+							}
+							return g;
+						});
 				})
 				.finally(() => {
 					pinging = false;
