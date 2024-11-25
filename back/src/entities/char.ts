@@ -354,6 +354,7 @@ export class Char {
 
   //action on death
   die(death?: string) {
+    this.stats.health = 0;
     if (this.dead) return;
     this.death = death ?? this.name + " died of unknown causes";
     this.dead = true;
