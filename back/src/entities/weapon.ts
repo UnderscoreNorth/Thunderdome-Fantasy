@@ -1,17 +1,10 @@
 import { Action, ActionArg } from "../mechanics/actions";
 import { roll } from "../utils";
-import { Item } from "./items";
+import { Char } from "./char";
+import { Item, Titem } from "./items";
 
-export type Wpn = {
-  name: string;
-  rangeBonus?: number;
-  accBonus?: number;
-  dmgBonus?: number;
-  uses?: [number, number];
-  value: number;
+export type Wpn = Titem & {
   type: "melee" | "range" | "magic";
-  planValue?: number;
-  action?: typeof Action;
 };
 export function getWeapon(value: number) {
   let weaponOdds: Array<[Wpn, number]> = [
@@ -30,6 +23,35 @@ export function getWeapon(value: number) {
         type: "range",
       },
       20,
+    ],
+    [
+      {
+        name: "bow",
+        rangeBonus: 2.5,
+        dmgBonus: 0,
+        uses: [5, 5],
+        value: 1,
+        accBonus: 0.7,
+        type: "range",
+        planValue: (i: Item) => {
+          let chance = 5;
+          if (i.uses < 10) chance += Math.pow(10 - i.uses, 2) / 2;
+          return 5;
+        },
+        action: class PracticeMagic extends Action {
+          constructor(arg: ActionArg) {
+            super(arg);
+            this.name = "fletches arrows";
+          }
+          perform() {
+            this.player.stats.energy -= Math.random() * 2;
+            this.player.logMsg("fletches arrows");
+            this.player.equip.weapon.uses++;
+          }
+        },
+        destroyOnEmpty: false,
+      },
+      30,
     ],
     [
       {
@@ -52,7 +74,7 @@ export function getWeapon(value: number) {
         accBonus: 0.6,
         value: 5,
         type: "magic",
-        planValue: 5,
+        planValue: (i: Item) => 5,
         action: class PracticeMagic extends Action {
           constructor(arg: ActionArg) {
             super(arg);
@@ -78,15 +100,9 @@ export function getWeapon(value: number) {
 }
 export class Weapon extends Item {
   type: "melee" | "range" | "magic";
-  planValue: number;
-  action?: typeof Action;
+
   constructor(a: Wpn) {
     super(a);
     this.type = a.type;
-    this.planValue = a.planValue ?? 0;
-    this.action = a.action;
-  }
-  planAction() {
-    return this.planValue;
   }
 }

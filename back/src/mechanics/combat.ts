@@ -25,7 +25,6 @@ export class FightAction extends Action {
         (this.player.equip?.weapon?.rangeBonus ?? 0) <
       dist
     ) {
-      console.log(65, dist);
       this.player.logMsg(
         "tries to fight " + this.target.name + " but they escape"
       );
@@ -76,22 +75,23 @@ function launch_attack(attacker: Char, defender: Char) {
   let rngBonus = 0;
   let xpBonus = 1;
   let defBonus = 1;
-  if (attacker.equip.weapon) {
+  if (attacker.equip.weapon && attacker.equip.weapon.uses > 0) {
     dmgBonus = attacker.equip.weapon.dmgBonus;
     accBonus *= attacker.equip.weapon.accBonus;
     rngBonus = attacker.equip.weapon.rangeBonus;
     xpBonus = attacker.equip.weapon.xpBonus;
   }
-  if (defender.equip.armor) {
+  if (defender.equip.armor && defender.equip.armor.uses > 0) {
     defBonus = defender.equip.armor.defBonus;
   }
   if (attacker.stats.combatRange + rngBonus >= getD(attacker, defender)) {
     let combatType = "melee";
-    if (attacker.equip.weapon) {
+    if (attacker.equip.weapon && attacker.equip.weapon.uses > 0) {
       combatType = attacker.equip.weapon.type;
       attacker.useWeapon();
     }
-    if (defender.equip.armor) defender.useArmor();
+    if (defender.equip.armor && defender.equip.armor.uses > 0)
+      defender.useArmor();
 
     if (Math.random() > 1 - accBonus) {
       let dmg =

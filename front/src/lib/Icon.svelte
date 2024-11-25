@@ -21,6 +21,7 @@
 	import GiBullseye from 'svelte-icons/gi/GiBullseye.svelte';
 	import MdSettings from 'svelte-icons/md/MdSettings.svelte';
 	import MdSort from 'svelte-icons/md/MdSort.svelte';
+	import GiPocketBow from 'svelte-icons/gi/GiPocketBow.svelte';
 	export let icon: string;
 </script>
 
@@ -68,4 +69,6 @@
 	<MdSettings />
 {:else if icon == 'sort'}
 	<MdSort />
+{:else if icon == 'bow'}
+	<GiPocketBow />
 {/if}

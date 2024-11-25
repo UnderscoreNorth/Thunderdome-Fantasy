@@ -8,6 +8,7 @@
 <tr>
 	<td style:background-image={`url(${char.img})`} class="sideImg"> </td>
 	<td>
+		{char.name}<br />
 		<div
 			style:height={'4px'}
 			style:width={(Math.max(char.stats.health, 0) / char.stats.maxHealth) * 100 + '%'}
@@ -32,9 +33,8 @@
 	</td>
 </tr>
 <tr>
-	<td colspan="2">
-		{char.name}<br />
-		{char.death ? char.death : (char.log?.[char.log.length - 1]?.[1] ?? '')}</td
+	<td colspan="2" style:height="2rem"
+		>{char.death ? char.death : (char.log?.[char.log.length - 1]?.[1] ?? '')}</td
 	>
 </tr>
 

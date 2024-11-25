@@ -189,13 +189,23 @@ export class Char {
   useWeapon() {
     if (this.equip.weapon) {
       this.equip.weapon.use();
-      if (this.equip.weapon.uses == 0) this.equip.weapon = undefined;
+      if (this.equip.weapon.uses == 0 && this.equip.weapon?.destroyOnEmpty) {
+        if (this.equip.weapon.type == "melee") {
+          this.logMsg("broke their " + this.equip.weapon.name);
+        } else {
+          this.logMsg("ran out of ammo for " + this.equip.weapon.name);
+        }
+        this.equip.weapon = undefined;
+      }
     }
   }
   useArmor() {
     if (this.equip.armor) {
       this.equip.armor.use();
-      if (this.equip.armor.uses == 0) this.equip.armor = undefined;
+      if (this.equip.armor.uses == 0 && this.equip.armor?.destroyOnEmpty) {
+        this.logMsg("broke their " + this.equip.armor.name + " armor");
+        this.equip.armor = undefined;
+      }
     }
   }
   turnEnd() {
