@@ -245,7 +245,10 @@ export class Char {
                 this.situation.awareOf.push(char);
                 if (
                   getD(this, char) <=
-                  this.stats.combatRange + (this.equip?.weapon?.rangeBonus ?? 0)
+                  this.stats.combatRange +
+                    (this.equip?.weapon?.uses
+                      ? this.equip?.weapon?.rangeBonus ?? 0
+                      : 0)
                 ) {
                   this.situation.inRangeOf.push(char);
                 }

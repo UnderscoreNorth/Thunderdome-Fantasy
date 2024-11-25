@@ -139,6 +139,8 @@
 		});
 	});
 	function draw() {
+		canvas.width = $view.renderSize;
+		canvas.height = $view.renderSize;
 		if (!$game?.name) return;
 		//timeArr = {};
 		//p = performance.now();

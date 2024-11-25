@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Icon from './Icon.svelte';
 	import { api } from './utils';
+	import { view } from './classes';
 	let show = false;
 	let pass = '';
 	let auth = false;
@@ -70,15 +71,28 @@
 	<div bind:this={bg} id="settingsModalBG" on:click={close}>
 		<div id="settingsModal">
 			{#if !auth}
+				Render Size<br />
 				<!-- svelte-ignore a11y-autofocus -->
+				<input
+					autofocus
+					id="password"
+					type="number"
+					min="500"
+					placeholder="Render Size"
+					step="500"
+					bind:value={$view.renderSize}
+				/>
+				<br />
+				Admin panel <br />
+
 				<input
 					bind:this={passwordEl}
 					id="password"
 					type="password"
 					bind:value={pass}
 					on:keypress={enterKey}
-					autofocus
 				/>
+				<br />
 			{:else}
 				<div style:padding="1rem">
 					<table>
