@@ -232,7 +232,7 @@ export class Char {
   }
   visionCheck(x: number, y: number) {
     let seen = false;
-    let d = 1;
+    let d = 0;
     this.situation.awareOf = [];
     this.situation.inRangeOf = [];
     do {
