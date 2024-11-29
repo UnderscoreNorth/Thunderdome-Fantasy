@@ -78,14 +78,15 @@ export type Char = {
 export const game = writable<Game>();
 export const selectedCharID = writable<number | undefined>(undefined);
 export const selectedIsland = writable<string | undefined>(undefined);
-export const view = writable<{
+export type View = {
 	renderSize: number;
 	zoom: number;
 	x: number;
 	y: number;
 	xDiff: number;
 	yDiff: number;
-}>({
+};
+export const view = writable<View>({
 	zoom: 1,
 	x: 0,
 	y: 0,

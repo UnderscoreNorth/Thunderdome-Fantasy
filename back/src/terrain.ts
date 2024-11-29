@@ -49,40 +49,39 @@ export class TerrainType {
       char.stats.health -= Math.random() * 5;
       if (char.stats.health <= 0) char.die("perished in the flame");
       if (char.currentAction && char.currentAction.priority < 18) {
-        /*let cX = game.map.centerX;
-        let cY = game.map.centerY;
-        let d = hypD(char.x() - cX, char.y() - cY);
+        let d = game.map.getDistance(char.coord, game.map.center);
         let land = game.map.land.map((i) => i[0] + "," + i[1]);
         let i = Math.min(Math.ceil(d), roll_range(4, game.maxPathFind));
         let found = false;
         do {
-          let tiles = game.map.getRing(char.x(), char.y(), i);
+          let tiles = game.map.getRing(
+            char.coord.q,
+            char.coord.s,
+            char.coord.r,
+            i
+          );
           tiles.sort((a, b) => {
-            return hypD(a[0] - cX, a[1] - cY) - hypD(b[0] - cX, b[1] - cY);
+            return (
+              game.map.getDistance(a, game.map.center) -
+              game.map.getDistance(b, game.map.center)
+            );
           });
           for (let tile of tiles) {
-            if (land.includes(tile.join(","))) {
+            if (land.includes(fromCube(tile))) {
               if (!found) {
                 found = true;
                 char.currentAction = new MoveAction({
                   player: char,
                   priority: 18,
                   data: {
-                    targetCoords: [tile[0], tile[1]],
+                    targetCoords: tile,
                   },
                 });
               }
             }
           }
           i++;
-        } while (i <= d && !found);*/
-        char.currentAction = new MoveAction({
-          player: char,
-          priority: 18,
-          data: {
-            targetCoords: game.map.getRandomLandPoint(),
-          },
-        });
+        } while (i <= d && !found);
       }
     }
     if (this.elevation == -3) {
@@ -710,13 +709,9 @@ export class Terrain {
           char.coord.r,
           i
         );
-        tiles.sort((a, b) => {
-          return (
-            this.getDistance(a, this.center) - this.getDistance(b, this.center)
-          );
-        });
+        shuffle(tiles);
         for (let tile of tiles) {
-          if (land.includes(fromCube(tile))) {
+          if (land.includes(fromCube(tile)) && !found) {
             found = true;
             //console.log(tile.elevation);
             q = tile.q;

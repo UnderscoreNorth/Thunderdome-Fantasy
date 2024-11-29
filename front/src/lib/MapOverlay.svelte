@@ -126,6 +126,7 @@
 		{/each}
 		<div>
 			{#each $game?.chars ?? [] as char (char.id)}
+				<!-- svelte-ignore a11y-mouse-events-have-key-events -->
 				<char
 					on:click={() => {
 						selectChar(char);
@@ -184,6 +185,7 @@
 		cursor: pointer;
 		box-sizing: border-box;
 		border: solid 1px gold;
+		pointer-events: auto;
 	}
 	char.sel {
 		opacity: 1;
