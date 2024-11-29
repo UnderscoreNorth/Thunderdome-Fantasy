@@ -1,11 +1,12 @@
 import { writable } from 'svelte/store';
 export type Game = {
 	name: string;
-	map: TerrainType[][];
+	map: Record<string, TerrainType>;
 	islands: Record<string, string>;
 	center: {
-		x: number;
-		y: number;
+		q: number;
+		s: number;
+		r: number;
 	};
 	diameter: number;
 	chars: Char[];
@@ -18,12 +19,12 @@ export type Game = {
 	burned: string[];
 };
 export type TerrainType = {
-	x: number;
-	y: number;
+	q: number;
+	s: number;
+	r: number;
 	icon: string;
 	type: string;
 	elevation: number;
-	glow: boolean;
 	groupID: string;
 };
 export type Char = {
@@ -47,14 +48,17 @@ export type Char = {
 		combatRange: number;
 	};
 	situation: {
-		x: number;
-		y: number;
 		visibility: number;
 		awareOf: Char[];
 		inRangeOf: Char[];
 		vision: string[];
 		seen: string[];
 		been: string[];
+	};
+	coord: {
+		q: number;
+		s: number;
+		r: number;
 	};
 	equip: {
 		weapon?: {
@@ -68,7 +72,7 @@ export type Char = {
 		};
 	};
 	death: string;
-	path?: Array<[number, number]>;
+	path?: string[];
 	log: Array<[string, string]>;
 };
 export const game = writable<Game>();
@@ -87,5 +91,6 @@ export const view = writable<{
 	y: 0,
 	xDiff: 0,
 	yDiff: 0,
-	renderSize: 2000
+	renderSize: 3000
 });
+export type Cube = { q: number; s: number; r: number };

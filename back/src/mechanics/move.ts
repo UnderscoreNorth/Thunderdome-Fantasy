@@ -1,23 +1,22 @@
 import { Char } from "../entities/char";
 import { game } from "../game";
-import { TerrainType } from "../terrain";
-import { getD, getNearByDiag, getTerrain, hypD } from "../utils";
+import { Cube, TerrainType } from "../terrain";
+import { fromCube } from "../utils";
 import { Action, ActionArg } from "./actions";
 
 export class MoveAction extends Action {
-  targetX: number;
-  targetY: number;
+  targetCood: Cube;
   path: TerrainType[];
-  subTargetX: number;
-  subTargetY: number;
+  subTargetCood: Cube;
   pathAttempts: number;
   pathRedirects: number;
   maxAttempts: number;
   speedModifier: number;
+  remainingCost: number;
   constructor(
     arg: ActionArg & {
       data: {
-        targetCoords?: [number, number];
+        targetCoords?: Cube;
       };
     }
   ) {
@@ -30,143 +29,137 @@ export class MoveAction extends Action {
     if (this.priority == 2) this.speedModifier = 1.1;
     if (this.priority > 2) this.speedModifier = 1.5;
     if ("targetCoords" in arg.data) {
-      this.targetX = arg.data["targetCoords"][0];
-      this.targetY = arg.data["targetCoords"][1];
+      this.targetCood = arg.data["targetCoords"];
       this.createPath();
     }
   }
   createPath() {
     this.pathAttempts = 0;
     this.pathRedirects = 0;
-    let tiles = game.map.getTilesBetween(
-      this.player.x(),
-      this.player.y(),
-      this.targetX,
-      this.targetY
-    );
-    tiles.unshift(game.map.array[this.player.x()][this.player.y()]);
-    let initTime = game.map.getTime(tiles);
-    this.maxAttempts = initTime * 500;
+    let tiles = game.map.getTilesBetween(this.player.coord, this.targetCood);
+    tiles.unshift(game.map.tiles[fromCube(this.player.coord)]);
+    let initTime = game.map.getMovementCost(tiles);
+    console.log(initTime);
+    this.maxAttempts = tiles.length * 500;
     this.path = tiles;
     let t = performance.now();
-    this.pathFind(
-      this.player.x(),
-      this.player.y(),
-      this.targetX,
-      this.targetY,
-      []
-    );
+    this.pathFind(this.player.coord, this.targetCood, []);
     console.log(
       "Pathfinding: ",
       this.player.name,
       "Redirects: ",
       this.pathRedirects,
       "Distance: ",
-      Math.round(
-        hypD(this.player.x() - this.targetX, this.player.y() - this.targetY)
-      ),
+      game.map.getDistance(this.player.coord, this.targetCood),
       "Time: ",
-      Math.round(performance.now() - t)
+      game.map.getMovementCost(this.path)
     );
     if (this.path.length > 2) this.path.shift();
-    if (this.path.length == 0)
-      this.path = [game.map.array[this.player.x()][this.player.y()]];
-    this.subTargetX = this.path[0].x;
-    this.subTargetY = this.path[0].y;
-    this.data = this.path.map((i) => [i.x, i.y]);
+    if (this.path.length == 0) {
+      throw "y";
+      this.path = [game.map.tiles[fromCube(this.player.coord)]];
+      this.turns = 1;
+    }
+    this.subTargetCood = this.path[0];
+    this.remainingCost = game.map.getMovementCost([
+      game.map.tiles[fromCube(this.player.coord)],
+      this.path[0],
+    ]);
+    this.data = this.path.map((i) => fromCube(i));
   }
-  pathFind(
-    startX: number,
-    startY: number,
-    targetX: number,
-    targetY: number,
-    prevTiles: TerrainType[]
-  ) {
-    if (prevTiles.map((i) => `${i.x},${i.y}`).includes(`${startX},${startY}`))
+  pathFind(startCood: Cube, targetCood: Cube, prevTiles: TerrainType[]) {
+    //console.log(this.maxAttempts, this.pathAttempts);
+    let qsr = fromCube(startCood);
+    if (prevTiles.map((i) => fromCube(i)).includes(qsr)) return;
+    prevTiles.push(game.map.tiles[qsr]);
+    let time = game.map.getMovementCost(prevTiles);
+    if (time >= game.map.getMovementCost(this.path)) {
       return;
-    prevTiles.push(game.map.array[startX][startY]);
+    }
+    //if (time >= 999) return;
     let initTile = prevTiles[0];
-    let time = game.map.getTime(prevTiles);
-    if (time >= game.map.getTime(this.path)) return;
-    let targetD = hypD(targetX - startX, targetY - startY);
-    let initialD = hypD(targetX - initTile.x, targetY - initTile.y);
-    if (targetD - (initialD + 5) > 0) return;
+    let targetD = game.map.getDistance(startCood, targetCood);
+    let initialD = game.map.getDistance(initTile, targetCood);
+    //if (targetD - (initialD + 10) > 0) return;
     //Prevent zigzagging
-    let nearBy = getNearByDiag(startX, startY).filter(([x, y]) => {
-      return prevTiles.filter((j) => {
-        return j.x == x && j.y == y;
-      }).length;
-    }).length;
-    if (nearBy > 1) return;
+    let nearBy = game.map
+      .getRing(startCood.q, startCood.s, startCood.r, 1)
+      .filter(
+        (i) => prevTiles.filter((j) => fromCube(j) == fromCube(i)).length
+      ).length;
+    if (nearBy > 1) {
+      //console.log("nearBy");
+      //return;
+    }
     this.pathAttempts++;
     if (this.pathAttempts > this.maxAttempts) return;
-    if (startX == targetX && startY == targetY) {
+    if (qsr == fromCube(targetCood)) {
       this.path = prevTiles;
       this.pathAttempts = 0;
       this.pathRedirects++;
     } else {
-      let arr: Array<[number, number, number]> = [];
+      let arr: Array<{ coord: Cube; c: number }> = [];
       //Prioritize the closest directions
-      for (const [x, y] of getNearByDiag(startX, startY)) {
-        if (game.map.array?.[x]?.[y] == undefined) continue;
-        let d =
-          hypD(x - targetX, y - targetY) *
-          (1 / game.map.array[x][y].moveSpeedB);
-        arr.push([x, y, d]);
+      for (const tile of game.map.getRing(
+        startCood.q,
+        startCood.s,
+        startCood.r,
+        1
+      )) {
+        arr.push({
+          coord: tile,
+          c: game.map.getDistance(tile, targetCood),
+        });
       }
-      arr.sort((a, b) => a[2] - b[2]);
-      for (const [x, y] of arr) {
-        this.pathFind(x, y, targetX, targetY, [...prevTiles]);
+      arr.sort((a, b) => a.c - b.c);
+      //console.log(arr);
+      for (const { coord } of arr) {
+        this.pathFind(coord, targetCood, [...prevTiles]);
       }
     }
   }
-  subMove(d: number) {
-    let terrainB =
-      getTerrain(
-        Math.round(this.player.situation.x),
-        Math.round(this.player.situation.y)
-      ).moveSpeedB * this.speedModifier;
-    let moveDist = d * terrainB;
+  subMove() {
+    let qsr = fromCube(this.subTargetCood);
+    let moveCost = Math.min(
+      game.map.getMovementCost([
+        game.map.tiles[fromCube(this.player.coord)],
+        game.map.tiles[qsr],
+      ]),
+      this.player.situation.movePoints
+    );
 
-    let distX = this.subTargetX - this.player.situation.x;
-    let distY = this.subTargetY - this.player.situation.y;
-    let dist = Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2));
-    let targetX = 0;
-    let targetY = 0;
-    let moved = Math.min(dist, moveDist);
-    let remainingD = moveDist - dist;
-    if (dist <= moveDist) {
-      //target within reach
-      targetX = this.subTargetX;
-      targetY = this.subTargetY;
-      this.path.shift();
-      this.data = this.path.map((i) => [i.x, i.y]);
-      if (this.path.length == 0) {
-        this.turns = 1;
-      } else {
-        this.subTargetX = this.path[0].x;
-        this.subTargetY = this.path[0].y;
-      }
+    this.remainingCost -= moveCost;
+    this.player.situation.movePoints -= moveCost;
+    this.player.stats.energy -= Math.random() * moveCost;
+    if (this.remainingCost > 0) return;
+    this.player.moveToCoords(
+      this.subTargetCood.q,
+      this.subTargetCood.s,
+      this.subTargetCood.r
+    );
+    this.player.been();
+    this.path.shift();
+    this.data = this.path.map((i) => fromCube(i));
+    if (this.path.length == 0) {
+      this.turns = 1;
+      return;
     } else {
-      //target too far away
-      let shiftX = (distX / dist) * moveDist;
-      let shiftY = (distY / dist) * moveDist;
-      //destination coords
-      targetX = this.player.situation.x * 1 + shiftX;
-      targetY = this.player.situation.y * 1 + shiftY;
+      this.subTargetCood = this.path[0];
+      this.remainingCost = game.map.getMovementCost([
+        game.map.tiles[fromCube(this.player.coord)],
+        this.path[0],
+      ]);
+      this.subMove();
     }
-    this.player.moveToCoords(targetX, targetY);
-    this.player.stats.energy -= Math.random() * 2 * this.speedModifier * moved;
-    if (this.path.length && remainingD > 0) this.subMove(remainingD);
   }
   perform() {
-    this.subMove(this.player.stats.moveSpeed);
+    this.subMove();
     if (this.priority == 3) {
       this.player.logMsg("escaping fight");
     } else if (this.priority == 18) {
       this.player.logMsg("escaping fire");
     } else {
-      switch (getTerrain(this.player.x(), this.player.y()).type) {
+      switch (game.map.tiles[fromCube(this.player.coord)].type) {
         case "water":
           this.player.logMsg("swimming");
           break;
@@ -199,7 +192,7 @@ export class FollowAction extends MoveAction {
   perform(): void {
     this.findPlayer();
     if (
-      getD(this.target, this.player) <
+      game.map.getDistance(this.target.coord, this.player.coord) <
       this.player.stats.combatRange +
         (this.player.equip?.weapon?.rangeBonus ?? 0)
     ) {
@@ -214,8 +207,7 @@ export class FollowAction extends MoveAction {
       this.turns = 1;
       return;
     }
-    this.targetX = this.target.x();
-    this.targetY = this.target.y();
+    this.targetCood = this.target.coord;
     this.createPath();
   }
   postPerform(): void {

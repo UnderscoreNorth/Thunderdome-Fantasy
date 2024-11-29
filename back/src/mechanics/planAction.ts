@@ -1,7 +1,7 @@
 import { Char } from "../entities/char";
 import { game } from "../game";
 import { TerrainType } from "../terrain";
-import { fromXY, getTerrain, roll } from "../utils";
+import { fromCube, roll } from "../utils";
 import { RestAction, SleepAction } from "./actions";
 import { FightAction } from "./combat";
 import { LootAction } from "./loot";
@@ -12,6 +12,7 @@ export function planAction(char: Char) {
     // char.setPlannedAction("rest", 20);
     char.setPlannedAction(RestAction, 20);
   }
+  const charTile = game.map.tiles[fromCube(char.coord)];
   const goals: Array<
     [
       {
@@ -54,12 +55,12 @@ export function planAction(char: Char) {
       ]);
     }
   }
-  if (char.currentAction?.priority < 2) {
-    for (let xy of Array.from(char.situation.vision)) {
-      let [x, y] = fromXY(xy);
+  if (char.currentAction?.priority < 2 || !char.currentAction) {
+    for (let qsr of Array.from(char.situation.vision)) {
+      let tile = game.map.tiles[qsr];
       let isGoal = false;
-      let value = game.map.array[x][y].value;
-      let loot = game.map.array[x][y].loot;
+      let value = tile.value;
+      let loot = tile.loot;
       if (
         loot &&
         value &&
@@ -70,19 +71,19 @@ export function planAction(char: Char) {
       if (isGoal)
         goals.push([
           {
-            goal: getTerrain(x, y),
+            goal: tile,
             type: "moveToLoot",
           },
           Math.pow(value + 1, 2) * 10,
         ]);
     }
   }
-  if (char.currentAction?.priority < 3) {
+  if (char.currentAction?.priority < 3 || !char.currentAction) {
     if (
-      getTerrain(char.x(), char.y()).loot &&
+      charTile.loot &&
       (char.equip.weapon == undefined || char.equip.armor == undefined)
     ) {
-      goals.push([{ goal: getTerrain(char.x(), char.y()), type: "loot" }, 50]);
+      goals.push([{ goal: charTile, type: "loot" }, 50]);
     }
     for (const oChar of char.situation.inRangeOf) {
       goals.push([
@@ -104,7 +105,7 @@ export function planAction(char: Char) {
     (((game.hour >= 22 || game.hour < 5) &&
       char.lastAction instanceof SleepAction == false) ||
       char.situation.lastSlept > 24 * 4) &&
-    getTerrain(char.x(), char.y()).elevation >= 0
+    charTile.elevation >= 0
   ) {
     if (char.situation.lastSlept > 16)
       goals.push([
@@ -114,6 +115,7 @@ export function planAction(char: Char) {
   }
   //choose new action
   let goal = roll(goals);
+  //console.log(goals, goal);
   if (goal) {
     if (goal.type == "fight") {
       char.setPlannedAction(FightAction, 3, {
@@ -135,7 +137,7 @@ export function planAction(char: Char) {
       });
     } else if (goal.type == "moveToLoot") {
       char.setPlannedAction(MoveAction, 2, {
-        targetCoords: [goal.goal.x, goal.goal.y],
+        targetCoords: goal.goal,
       });
     } else if (goal.type == "follow") {
       char.setPlannedAction(FollowAction, 2, {

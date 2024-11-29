@@ -1,5 +1,5 @@
 import { Char } from "../entities/char";
-import { getD } from "../utils";
+import { game } from "../game";
 import { Action, ActionArg } from "./actions";
 export class FightAction extends Action {
   target: Char;
@@ -19,7 +19,7 @@ export class FightAction extends Action {
       this.player.logMsg("attacks the corpse of " + this.target.name);
       return;
     }
-    let dist = getD(this.player, this.target);
+    let dist = game.map.getDistance(this.player.coord, this.target.coord);
     if (
       this.player.stats.combatRange +
         (this.player.equip?.weapon?.rangeBonus ?? 0) <
@@ -84,7 +84,10 @@ function launch_attack(attacker: Char, defender: Char) {
   if (defender.equip.armor && defender.equip.armor.uses > 0) {
     defBonus = defender.equip.armor.defBonus;
   }
-  if (attacker.stats.combatRange + rngBonus >= getD(attacker, defender)) {
+  if (
+    attacker.stats.combatRange + rngBonus >=
+    game.map.getDistance(attacker.coord, defender.coord)
+  ) {
     let combatType = "melee";
     if (attacker.equip.weapon && attacker.equip.weapon.uses > 0) {
       combatType = attacker.equip.weapon.type;

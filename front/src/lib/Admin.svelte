@@ -11,7 +11,7 @@
 	type Char = { name: string; img: string; group: string };
 	let chars: Char[] = [{ name: '', group: '', img: '' }];
 	let data = '';
-	let diameter = 250;
+	let diameter = 100;
 	let days = 12;
 	let islandData = '';
 	onMount(() => {});
@@ -70,18 +70,18 @@
 {#if show}
 	<div bind:this={bg} id="settingsModalBG" on:click={close}>
 		<div id="settingsModal">
+			Render Size<br />
+			<!-- svelte-ignore a11y-autofocus -->
+			<input
+				autofocus
+				id="password"
+				type="number"
+				min="500"
+				placeholder="Render Size"
+				step="500"
+				bind:value={$view.renderSize}
+			/>
 			{#if !auth}
-				Render Size<br />
-				<!-- svelte-ignore a11y-autofocus -->
-				<input
-					autofocus
-					id="password"
-					type="number"
-					min="500"
-					placeholder="Render Size"
-					step="500"
-					bind:value={$view.renderSize}
-				/>
 				<br />
 				Admin panel <br />
 

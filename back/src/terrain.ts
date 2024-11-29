@@ -3,35 +3,41 @@ import { game } from "./game";
 import { MoveAction } from "./mechanics/move";
 import {
   changeDirection,
-  directions,
-  fromXY,
-  getNearby,
-  getNearByDiag,
-  getTerrain,
-  hypD,
+  direction,
+  fromCube,
   roll,
   roll_range,
   shuffle,
+  toCube,
 } from "./utils";
+
+export type Cube = {
+  q: number;
+  s: number;
+  r: number;
+};
 
 export class TerrainType {
   public type: string;
   public icon: string;
-  public danger: number;
-  public fightRangeB: number;
-  public moveSpeedB: number;
-  public sightB: number;
+  public moveCost: number;
   public elevation: number;
   public groupID: string;
   public glow: boolean;
-  public x: number;
-  public y: number;
+  public q: number;
+  public s: number;
+  public r: number;
   public value: number;
   public loot: number;
-  constructor(elevation: number, x: number, y: number) {
+  constructor(elevation: number, q: number, s: number, r: number) {
     this.elevation = elevation;
-    this.x = x;
-    this.y = y;
+    this.q = q;
+    this.s = s;
+    this.r = r;
+    if (q + s + r !== 0) {
+      console.trace("yeah");
+      throw `${q} ${s} ${r} is not a valid coord`;
+    }
     this.value = 0;
     this.loot = 0;
   }
@@ -43,7 +49,7 @@ export class TerrainType {
       char.stats.health -= Math.random() * 5;
       if (char.stats.health <= 0) char.die("perished in the flame");
       if (char.currentAction && char.currentAction.priority < 18) {
-        let cX = game.map.centerX;
+        /*let cX = game.map.centerX;
         let cY = game.map.centerY;
         let d = hypD(char.x() - cX, char.y() - cY);
         let land = game.map.land.map((i) => i[0] + "," + i[1]);
@@ -69,7 +75,14 @@ export class TerrainType {
             }
           }
           i++;
-        } while (i <= d && !found);
+        } while (i <= d && !found);*/
+        char.currentAction = new MoveAction({
+          player: char,
+          priority: 18,
+          data: {
+            targetCoords: game.map.getRandomLandPoint(),
+          },
+        });
       }
     }
     if (this.elevation == -3) {
@@ -80,120 +93,103 @@ export class TerrainType {
   }
 }
 export class TerrainWater extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 1;
+  constructor(elevation: number, q: number, s: number, r: number) {
+    super(elevation, q, s, r);
     this.type = "water";
     this.icon = "";
-    this.fightRangeB = 0;
-    this.moveSpeedB = 0.3;
-    this.sightB = 0.75;
-  }
-}
-export class TerrainUnseen extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 0;
-    this.type = "unseen";
-    this.icon = "";
-    this.fightRangeB = 0;
-    this.moveSpeedB = 0;
-    this.sightB = 0;
+    this.moveCost = 5;
   }
 }
 export class TerrainForest extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 0;
+  constructor(elevation: number, q: number, s: number, r: number) {
+    super(elevation, q, s, r);
     this.type = "tree";
     this.icon = "🌳";
-    this.fightRangeB = 1;
-    this.moveSpeedB = 0.9;
-    this.sightB = 0.5;
+    this.moveCost = 1.1;
   }
 }
 export class TerrainSand extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 0;
+  constructor(elevation: number, q: number, s: number, r: number) {
+    super(elevation, q, s, r);
     this.type = "sand";
-    this.fightRangeB = 1;
-    this.moveSpeedB = 0.9;
-    this.sightB = 0.5;
+    this.moveCost = 1.1;
     this.icon = "";
   }
 }
 export class TerrainPlains extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 0;
+  constructor(elevation: number, q: number, s: number, r: number) {
+    super(elevation, q, s, r);
     this.type = "plain";
     this.icon = "";
-    this.fightRangeB = 1;
-    this.moveSpeedB = 1;
-    this.sightB = 1;
+    this.moveCost = 1;
   }
 }
 export class TerrainMountain extends TerrainType {
-  constructor(elevation: number, x: number, y: number) {
-    super(elevation, x, y);
-    this.danger = 1;
+  constructor(elevation: number, q: number, s: number, r: number) {
+    super(elevation, q, s, r);
     this.type = "mtn";
     this.icon = "";
-    this.fightRangeB = 1;
-    this.moveSpeedB = 0.4;
-    this.sightB = 2;
+    this.moveCost = 3;
   }
 }
 export class Terrain {
-  array: Array<Array<TerrainType>>;
-  seen: Array<Array<boolean>>;
-  land: Array<[number, number]>;
+  tiles: Record<string, TerrainType>;
+  land: Array<Cube>;
+  water: Array<Cube>;
   lifted: Array<string>;
   diameter: number;
-  centerX: number;
-  centerY: number;
+  center: {
+    q: number;
+    s: number;
+    r: number;
+  };
   islands: Record<string, Array<string>>;
   lakes: Record<string, Array<string>>;
   ocean: Array<string>;
   constructor(diameter: number, islandNames: string[]) {
-    this.array = [];
-    this.seen = [];
+    this.tiles = {};
     this.diameter = diameter;
     this.land = [];
+    this.water = [];
     this.islands = {};
     this.lakes = {};
     this.ocean = [];
+    this.center = { q: 0, s: 0, r: 0 };
     //Init gen
-    let landXArr = [];
-    let landYArr = [];
-
-    for (let x = 0; x < diameter; x++) {
-      let row: Array<TerrainType> = [];
-      for (let y = 0; y < diameter; y++) {
-        row[y] = new TerrainWater(-3, x, y);
+    for (let q = -diameter; q <= diameter; q++) {
+      for (let s = -diameter; s <= diameter; s++) {
+        if (q + s > diameter || q + s < -diameter) continue;
+        this.tiles[fromCube({ q, s, r: -q - s })] = new TerrainWater(
+          -3,
+          q,
+          s,
+          -q - s
+        );
       }
-      this.array[x] = row;
-      this.seen.push(new Array(diameter).fill(false));
     }
     //First land
     let numLand = 0;
     let attempt = 0;
     let minLand = roll_range(3, 5);
+
     do {
       console.log(`Terrain Generation Island: ${attempt}`);
       attempt++;
       numLand = 0;
-      let startX = roll_range(5, diameter - 5);
-      let startY = roll_range(5, diameter - 5);
+      let q = roll_range(-diameter + 10, diameter - 10);
+      let s = roll_range(
+        -(Math.abs(diameter) - Math.abs(q)),
+        Math.abs(diameter) - Math.abs(q)
+      );
+      let r = -q - s;
+      let cood = { q, s, r };
       let startingLimit = roll_range(8, 10) / 10;
       //Land Lift
-      for (let i = 0; i < 3; i++) {
+      for (let i = -3; i < 3; i++) {
         this.lifted = [];
 
         this.raiseGround(
-          startX,
-          startY,
+          cood,
           startingLimit - Math.pow(i * 0.05, 2),
           0.5,
           -1,
@@ -201,31 +197,28 @@ export class Terrain {
         );
       }
       //Mountains
-      if (Math.random() > 0.05) {
-        let rangeLength = roll_range(3, this.diameter / 2);
+      if (Math.random() > 0.66) {
+        let rangeLength = roll_range(3, this.diameter);
         if (rangeLength <= 5) {
           let mountainHeight = roll_range(5, 7);
           this.lifted = [];
-          this.array[startX][startY].elevation = mountainHeight;
-          this.raiseNearby(startX, startY, 10);
+          this.tiles[fromCube(cood)].elevation = mountainHeight;
+          this.raiseNearby(cood, 5);
         } else {
-          let dir = roll_range(0, 7);
+          let dir = roll_range(0, 5);
           let j = 0;
           do {
             this.lifted = [];
             j++;
-            startX += directions[dir][0];
-            startY += directions[dir][1];
-            let edgeDistance = this.getEdgeDistance(startX, startY);
-            if (edgeDistance <= 5) break;
-            if (!this.array?.[startX]?.[startY]) break;
+            cood = direction(cood, dir);
+            let edgeDistance = this.getDistance(cood, this.center);
+            if (edgeDistance > this.diameter) break;
             let mountainHeight = roll_range(3, 5);
-            this.array[startX][startY].elevation = mountainHeight - 1;
+            this.tiles[fromCube(cood)].elevation = mountainHeight - 1;
             this.raiseGround(
-              startX,
-              startY,
+              cood,
               1,
-              roll_range(2, 4) / 10,
+              roll_range(0, 4) / 10,
               -1,
               mountainHeight
             );
@@ -240,118 +233,122 @@ export class Terrain {
           } while (j < rangeLength);
         }
       }
-
       //Cleaning up some of the lonely water tiles
-      for (let x = 0; x < diameter; x++) {
-        for (let y = 0; y < diameter; y++) {
-          if (this.array[x][y].elevation < 0) {
-            let clean = [
-              getNearby(x, y)
-                .map((i) => {
-                  if (this.array?.[i[0]]?.[i[1]]?.elevation >= 0) return false;
-                  return true;
-                })
-                .filter((x) => x).length == 0,
-              Math.random() > 0.5,
-            ];
-            if (clean[0] && clean[1]) {
-              this.array[x][y] = new TerrainPlains(0, x, y);
-            }
-          }
+      for (let qsr in this.tiles) {
+        const tile = this.tiles[qsr];
+        let nearbyLand = this.getRing(tile.q, tile.s, tile.r, 1).filter(
+          (i) => i.elevation - 1 == tile.elevation
+        ).length;
+        if (nearbyLand == 6 && Math.random() > 0.1) {
+          this.tiles[qsr].elevation++;
         }
       }
-      landXArr = [];
-      landYArr = [];
       this.land = [];
-      for (let x = 0; x < diameter; x++) {
-        for (let y = 0; y < diameter; y++) {
-          if (
-            this.array[x][y].elevation >= 0 &&
-            this.array[x][y].elevation <= 2
-          ) {
-            this.array[x][y] = new TerrainPlains(
-              this.array[x][y].elevation,
-              x,
-              y
+      this.water = [];
+      for (let qsr in this.tiles) {
+        const tile = this.tiles[qsr];
+        if (tile.elevation >= 0) {
+          if (tile.elevation <= 2) {
+            this.tiles[qsr] = new TerrainPlains(
+              tile.elevation,
+              tile.q,
+              tile.s,
+              tile.r
             );
-          } else if (this.array[x][y].elevation > 2) {
-            this.array[x][y] = new TerrainMountain(
-              this.array[x][y].elevation,
-              x,
-              y
+          } else {
+            this.tiles[qsr] = new TerrainMountain(
+              tile.elevation,
+              tile.q,
+              tile.s,
+              tile.r
             );
           }
-          if (this.array[x][y].elevation >= 0) {
-            this.land.push([x, y]);
-            numLand++;
-            landXArr.push(x);
-            landYArr.push(y);
-          }
+          this.land.push(toCube(qsr));
+          numLand++;
+        } else {
+          this.water.push(toCube(qsr));
         }
       }
       console.log(
         "Land %: " +
-          Math.round((numLand / (Math.pow(this.diameter, 2) / minLand)) * 100)
+          Math.round(
+            (numLand /
+              ((3 * Math.pow(this.diameter, 2) - 3 * this.diameter + 1) /
+                minLand)) *
+              100
+          )
       );
     } while (
-      numLand < (this.diameter * this.diameter) / minLand &&
+      numLand <
+        (3 * Math.pow(this.diameter, 2) - 3 * this.diameter + 1) / minLand &&
       attempt < 1000
     );
-
     //Determining Islands
     let change = false;
+    console.log("Num of land tiles ", Object.values(this.land).length);
+    let ungrouped = [...this.land].map((i) => fromCube(i));
+    shuffle(ungrouped);
     do {
-      change = false;
-      for (let x = 0; x < diameter; x++) {
-        for (let y = 0; y < diameter; y++) {
-          let tile = this.array[x][y];
-          if (tile.elevation >= 0) {
-            let nearby = getNearby(x, y);
-            let found = false;
-            for (const [x2, y2] of nearby) {
-              let nearbyTile = this.array?.[x2]?.[y2];
-              if (
-                nearbyTile !== undefined &&
-                nearbyTile.elevation >= 0 &&
-                !found &&
-                nearbyTile.groupID !== undefined &&
-                nearbyTile.groupID !== tile.groupID
-              ) {
-                let oldGroupID = tile.groupID;
-                if (oldGroupID == undefined) {
-                  tile.groupID = nearbyTile.groupID;
-                } else {
-                  for (let x3 = 0; x3 < diameter; x3++) {
-                    for (let y3 = 0; y3 < diameter; y3++) {
-                      if (this.array[x3][y3].groupID == oldGroupID) {
-                        this.array[x3][y3].groupID = nearbyTile.groupID;
-                      }
-                    }
-                  }
-                }
-
-                found = true;
-                change = true;
-              }
-              if (!found && tile.groupID == undefined)
-                tile.groupID = `${x},${y}`;
+      let qrs = ungrouped[0];
+      const tile = this.tiles[qrs];
+      tile.groupID = qrs;
+      ungrouped.splice(ungrouped.indexOf(qrs), 1);
+      let d = 1;
+      let found = false;
+      do {
+        found = false;
+        for (const neighbor of this.getRing(tile.q, tile.s, tile.r, d)) {
+          const neighborGroup = this.getRing(
+            neighbor.q,
+            neighbor.s,
+            neighbor.r,
+            1
+          ).filter((i) => i.groupID == qrs).length;
+          if (
+            neighbor.elevation >= 0 &&
+            neighbor.groupID == undefined &&
+            neighborGroup > 0
+          ) {
+            neighbor.groupID = qrs;
+            found = true;
+            ungrouped.splice(ungrouped.indexOf(fromCube(neighbor)), 1);
+          }
+        }
+        d++;
+      } while (found);
+      do {
+        found = false;
+        for (let i = 1; i < d; i++) {
+          for (const neighbor of this.getRing(tile.q, tile.s, tile.r, i)) {
+            const neighborGroup = this.getRing(
+              neighbor.q,
+              neighbor.s,
+              neighbor.r,
+              1
+            ).filter((i) => i.groupID == qrs).length;
+            if (
+              neighbor.elevation >= 0 &&
+              neighbor.groupID == undefined &&
+              neighborGroup > 0
+            ) {
+              found = true;
+              neighbor.groupID = qrs;
+              ungrouped.splice(ungrouped.indexOf(fromCube(neighbor)), 1);
             }
           }
         }
-      }
-    } while (change);
-    for (let x = 0; x < diameter; x++) {
-      for (let y = 0; y < diameter; y++) {
-        let tile = this.array[x][y];
-        if (tile.groupID) {
-          if (this.islands[tile.groupID] == undefined)
-            this.islands[tile.groupID] = [];
-          this.islands[tile.groupID].push(`${x},${y}`);
-        }
+      } while (found);
+    } while (ungrouped.length);
+    for (let qsr in this.tiles) {
+      const tile = this.tiles[qsr];
+      if (tile.groupID && tile.elevation >= 0) {
+        if (this.islands[tile.groupID] == undefined)
+          this.islands[tile.groupID] = [];
+        this.islands[tile.groupID].push(qsr);
       }
     }
     //Grouping smaller islands
-    change = false;
+    /*change = false;
     do {
       change = false;
       for (let name in this.islands) {
@@ -380,7 +377,7 @@ export class Terrain {
           }
         }
       }
-    } while (change);
+    } while (change);*/
     shuffle(islandNames);
     let islands: Array<{ s: number; name: string }> = [];
     for (let name in this.islands) {
@@ -399,116 +396,106 @@ export class Terrain {
         newName = "--" + island.name;
       }
       this.islands[newName] = this.islands[island.name];
-      for (const xy of this.islands[newName]) {
-        let [x, y] = fromXY(xy);
-        this.array[x][y].groupID = newName;
+      for (const qsr of this.islands[newName]) {
+        this.tiles[qsr].groupID = newName;
       }
       delete this.islands[island.name];
     }
-    console.log("Number of islands: " + Object.values(this.islands).length);
+    console.log(
+      "Number of islands: " + Object.values(this.islands).map((i) => i.length)
+    );
     //Determining Lakes
-    change = false;
+    ungrouped = [...this.water].map((i) => fromCube(i));
     do {
-      change = false;
-      for (let x = 0; x < diameter; x++) {
-        for (let y = 0; y < diameter; y++) {
-          let tile = this.array[x][y];
-          if (tile.elevation < 0) {
-            let nearby = [
-              [x - 1, y],
-              [x - 1, y + 1],
-              [x, y + 1],
-            ];
-            let found = false;
-            for (const [x2, y2] of nearby) {
-              let nearbyTile = this.array?.[x2]?.[y2];
-              if (
-                nearbyTile !== undefined &&
-                nearbyTile.elevation < 0 &&
-                !found &&
-                nearbyTile.groupID !== undefined &&
-                nearbyTile.groupID !== tile.groupID
-              ) {
-                let oldGroupID = tile.groupID;
-                if (oldGroupID == undefined) {
-                  tile.groupID = nearbyTile.groupID;
-                } else {
-                  for (let x3 = 0; x3 < diameter; x3++) {
-                    for (let y3 = 0; y3 < diameter; y3++) {
-                      if (this.array[x3][y3].groupID == oldGroupID) {
-                        this.array[x3][y3].groupID = nearbyTile.groupID;
-                      }
-                    }
-                  }
-                }
-
-                found = true;
-                change = true;
-              }
-              if (!found && tile.groupID == undefined)
-                tile.groupID = `${x},${y}`;
-            }
+      let qrs = ungrouped[0];
+      const tile = this.tiles[qrs];
+      tile.groupID = qrs;
+      ungrouped.splice(ungrouped.indexOf(qrs), 1);
+      let d = 1;
+      let found = false;
+      do {
+        found = false;
+        for (const neighbor of this.getRing(tile.q, tile.s, tile.r, d)) {
+          const neighborGroup = this.getRing(
+            neighbor.q,
+            neighbor.s,
+            neighbor.r,
+            1
+          ).filter((i) => i.groupID == qrs).length;
+          if (
+            neighbor.elevation < 0 &&
+            neighbor.groupID == undefined &&
+            neighborGroup
+          ) {
+            neighbor.groupID = qrs;
+            found = true;
+            ungrouped.splice(ungrouped.indexOf(fromCube(neighbor)), 1);
           }
         }
-      }
-    } while (change);
-    for (let x = 0; x < diameter; x++) {
-      for (let y = 0; y < diameter; y++) {
-        let tile = this.array[x][y];
-        if (tile.groupID) {
-          if (this.lakes[tile.groupID] == undefined)
-            this.lakes[tile.groupID] = [];
-          this.lakes[tile.groupID].push(`${x},${y}`);
-        }
+        d++;
+      } while (found);
+    } while (ungrouped.length);
+    for (let qsr in this.tiles) {
+      const tile = this.tiles[qsr];
+      if (tile.groupID && tile.elevation < 0) {
+        if (this.lakes[tile.groupID] == undefined)
+          this.lakes[tile.groupID] = [];
+        this.lakes[tile.groupID].push(qsr);
       }
     }
 
     this.ocean = Object.values(this.lakes).sort(
       (a, b) => b.length - a.length
     )[0];
-    this.centerX = Math.round(diameter / 2);
-    this.centerY = Math.round(diameter / 2);
+    console.log("Ocean size:", Object.keys(this.ocean).length);
+    let found = false;
+    let d = 0;
+    do {
+      const tiles = this.getRing(0, 0, 0, d);
+      for (const tile of tiles) {
+        if (tile.elevation >= 0) {
+          found = true;
+          this.center = { q: tile.q, s: tile.s, r: tile.r };
+        }
+      }
+      d++;
+    } while (!found);
     //Beaches
     let numBeaches = roll_range(7, 15);
     this.lifted = [];
     shuffle(this.land);
-    for (let n in this.land) {
-      let [x, y] = this.land[n];
-      let nearOcean = getNearByDiag(x, y).filter(([x2, y2]) => {
-        let xy = `${x2},${y2}`;
-        if (this.array?.[x2]?.[y2] !== undefined && this.ocean.includes(xy))
-          return true;
-        return false;
-      }).length;
-      if (nearOcean && this.array[x][y].elevation == 0) {
+    for (let cood of this.land) {
+      let tile = this.tiles[fromCube(cood)];
+      let nearOcean = this.getRing(cood.q, cood.s, cood.r, 1).filter((i) =>
+        this.ocean.includes(fromCube(i))
+      ).length;
+      if (nearOcean && tile.elevation == 0) {
         numBeaches--;
-        this.spreadBeach(x, y, 0.99, "beach");
+        this.spreadBeach(tile, 0.99, "beach");
         if (numBeaches == 0) break;
       }
     }
     numBeaches = roll_range(35, 50);
     this.lifted = [];
     shuffle(this.land);
-    for (let n in this.land) {
-      let [x, y] = this.land[n];
-      let nearOcean = getNearByDiag(x, y).filter(([x2, y2]) => {
-        let xy = `${x2},${y2}`;
-        if (this.array?.[x2]?.[y2] !== undefined && this.ocean.includes(xy))
-          return true;
-        return false;
-      }).length;
-      if (nearOcean && this.array[x][y].elevation == 0) {
+    for (let cood of this.land) {
+      let tile = this.tiles[fromCube(cood)];
+      let nearOcean = this.getRing(cood.q, cood.s, cood.r, 1).filter((i) =>
+        this.ocean.includes(fromCube(i))
+      ).length;
+      if (nearOcean && tile.elevation == 0) {
         numBeaches--;
-        this.spreadBeach(x, y, 0.99, "land");
+        this.spreadBeach(tile, 0.99, "land");
         if (numBeaches == 0) break;
       }
     }
     console.log("Beaches generated");
-    for (let [x, y] of this.land) {
-      if (this.array[x][y].elevation == 0) {
-        this.array[x][y].elevation = 0.5;
-      } else if (this.array[x][y].elevation == 0.5) {
-        this.array[x][y].elevation = 0;
+    for (let cood of this.land) {
+      const tile = this.tiles[fromCube(cood)];
+      if (tile.elevation == 0) {
+        tile.elevation = 0.5;
+      } else if (tile.elevation == 0.5) {
+        tile.elevation = 0;
       }
     }
     //Forests
@@ -517,9 +504,9 @@ export class Terrain {
     do {
       attempt++;
       console.log("Forest " + attempt);
-      let [x, y] = this.getRandomLandPoint();
+      let cood = this.getRandomLandPoint();
       this.lifted = [];
-      this.spreadTree(x, y, roll_range(5, 10) / 10, -1);
+      this.spreadTree(cood, roll_range(5, 10) / 10, -1);
     } while (attempt < minForests);
     console.log("Forests generated");
     //Locations
@@ -530,11 +517,10 @@ export class Terrain {
       Math.ceil(Math.pow(this.diameter, 2) / 100),
       1,
       [0, 2],
-      (x, y) => {
-        let tile = this.array[x][y];
+      (tile) => {
         return (
-          this.getRing(x, y, 1).filter(
-            ([x2, y2]) => this.array[x2][y2].elevation < tile.elevation
+          this.getRing(tile.q, tile.s, tile.r, 1).filter(
+            (oTile) => oTile.elevation < tile.elevation
           ).length > 0
         );
       }
@@ -548,31 +534,8 @@ export class Terrain {
       [1, 2]
     );
     this.populateLocations("tower", [4, 7], 5, 5, 2, [1, 1]);
-    for (let x = 0; x < this.diameter; x++) {
-      for (let y = 0; y < this.diameter; y++) {
-        let tile = this.array[x][y];
-        if (!["🔥", "🌳"].includes(tile.icon)) tile.glow = true;
-      }
-    }
     console.log("Locations generated");
-    let d = 1;
-    while (
-      this.array[this.centerX][this.centerY].elevation < 0 &&
-      d < this.diameter
-    ) {
-      for (const [x2, y2] of this.getRing(this.centerX, this.centerY, d)) {
-        if (this.array[x2][y2].elevation >= 0) {
-          this.centerX = x2;
-          this.centerY = y2;
-        }
-      }
-      d++;
-    }
-    this.array[this.centerX][this.centerY].icon = "center";
-    console.log(
-      `Center: [${this.centerX},${this.centerY}]`,
-      this.array[this.centerX][this.centerY]
-    );
+    this.tiles[fromCube(this.center)].icon = "center";
   }
   getEdgeDistance(x: number, y: number) {
     return (
@@ -587,21 +550,17 @@ export class Terrain {
     max: number,
     value: number,
     loot: [number, number],
-    condition?: (x: number, y: number) => boolean
+    condition?: (cood: TerrainType) => boolean
   ) {
     let tiles: Array<TerrainType> = [];
-    for (let x = 0; x < this.diameter; x++) {
-      for (let y = 0; y < this.diameter; y++) {
-        let tile = this.array[x][y];
-        if (
-          tile.elevation >= elevations[0] &&
-          tile.elevation <= elevations[0]
-        ) {
-          if (condition !== undefined && !condition(x, y)) continue;
-          tiles.push(tile);
-        }
+    for (let qsr in this.tiles) {
+      const tile = this.tiles[qsr];
+      if (tile.elevation >= elevations[0] && tile.elevation <= elevations[0]) {
+        if (condition !== undefined && !condition(tile)) continue;
+        tiles.push(tile);
       }
     }
+
     shuffle(tiles);
     for (let i = 0; i < roll_range(min, max); i++) {
       if (tiles[i]) {
@@ -612,122 +571,106 @@ export class Terrain {
     }
   }
   raiseGround(
-    x: number,
-    y: number,
+    cood: Cube,
     spread: number,
     decay: number,
     direction: number,
     limit: number
   ) {
-    if (x == 0 || y == 0 || x == this.diameter - 1 || y == this.diameter - 1)
-      return;
-    if (this.array[x][y].elevation >= limit) return;
-    let edgeDistance = this.getEdgeDistance(x, y);
-    this.array[x][y].changeElevation(1);
-    this.lifted.push(`${x},${y}`);
-    for (let i in getNearby(x, y)) {
-      const [x2, y2] = getNearby(x, y)[i];
+    if (this.tiles[fromCube(cood)].elevation >= limit) return;
+    let edgeDistance = this.getDistance(cood, this.center);
+    this.tiles[fromCube(cood)].changeElevation(1);
+    this.lifted.push(fromCube(cood));
+    const tiles = this.getRing(cood.q, cood.s, cood.r, 1, true);
+    for (let i in tiles) {
+      const tile = tiles[i];
       let chance = Math.random();
       if (parseInt(i) == direction) chance += 0.2;
       if (
         spread > chance &&
-        !this.lifted.includes(`${x2},${y2}`) &&
-        this.array?.[x2]?.[y2] &&
-        this.array[x2][y2].elevation < limit
+        !this.lifted.includes(fromCube(tile)) &&
+        tile.elevation < limit
       ) {
-        spread *= Math.random() * decay + 0.72;
-        if (edgeDistance <= 3) {
-          spread *= (3 - edgeDistance) / 3;
+        spread *= Math.random() * decay + 0.7;
+        if (edgeDistance > this.diameter) {
+          spread *= (edgeDistance - this.diameter) / 3;
         }
         if (spread > 1) spread = 1;
-        this.raiseGround(x2, y2, spread, decay, parseInt(i), limit);
-      } else {
+        this.raiseGround(tile, spread, decay, parseInt(i), limit);
       }
     }
   }
-  raiseNearby(x: number, y: number, limit: number) {
+  raiseNearby(cood: Cube, limit: number) {
     limit--;
-    if (
-      x == 0 ||
-      y == 0 ||
-      x == this.diameter - 1 ||
-      y == this.diameter - 1 ||
-      limit == 0
-    )
-      return;
-    let xy = `${x},${y}`;
-    if (this.lifted.includes(xy)) return;
-    this.lifted.push(xy);
-    let tile = this.array[x][y];
-    for (let [x2, y2] of getNearby(x, y)) {
-      let otherTile = this.array?.[x2]?.[y2];
-      if (otherTile !== undefined) {
-        if (otherTile.elevation < tile.elevation) {
-          otherTile.elevation = roll_range(tile.elevation - 1, tile.elevation);
-          this.raiseNearby(x2, y2, limit);
-        }
+    if (limit == 0) return;
+    if (this.lifted.includes(fromCube(cood))) return;
+    this.lifted.push(fromCube(cood));
+    let tile = this.tiles[fromCube(cood)];
+    for (const oTile of this.getRing(cood.q, cood.s, cood.r, 1)) {
+      if (oTile.elevation < tile.elevation) {
+        oTile.elevation = roll_range(tile.elevation - 1, tile.elevation);
+        this.raiseNearby(oTile, limit);
       }
     }
   }
-  spreadBeach(x: number, y: number, spread: number, type: "beach" | "land") {
-    if (x == 0 || y == 0 || x == this.diameter - 1 || y == this.diameter - 1)
-      return;
-    if (this.array[x][y].elevation !== 0) return;
-    this.array[x][y] =
+  spreadBeach(cood: Cube, spread: number, type: "beach" | "land") {
+    if (this.tiles[fromCube(cood)].elevation !== 0) return;
+    let group = this.tiles[fromCube(cood)].groupID;
+    this.tiles[fromCube(cood)] =
       type == "beach"
-        ? new TerrainSand(0.5, x, y)
-        : new TerrainPlains(0.5, x, y);
-    this.lifted.push(`${x},${y}`);
-    for (let i in getNearByDiag(x, y)) {
-      const [x2, y2] = getNearByDiag(x, y)[i];
+        ? new TerrainSand(0.5, cood.q, cood.s, cood.r)
+        : new TerrainPlains(0.5, cood.q, cood.s, cood.r);
+    this.tiles[fromCube(cood)].groupID = group;
+    this.lifted.push(fromCube(cood));
+    for (let tile of this.getRing(cood.q, cood.s, cood.r, 1)) {
       let chance = Math.random();
-      let nearByOcean = getNearByDiag(x2, y2).filter(([x3, y3]) => {
-        let xy = `${x3},${y3}`;
-        if (this.array?.[x3]?.[y3] !== undefined && this.ocean.includes(xy))
-          return true;
-        return false;
-      }).length;
-      chance += 0.1 * nearByOcean;
-      spread += 0.1 * nearByOcean;
-      if (
-        spread > chance &&
-        !this.lifted.includes(`${x2},${y2}`) &&
-        this.array?.[x2]?.[y2]
-      ) {
+      let nearByOcean = this.getRing(tile.q, tile.s, tile.r, 1).filter(
+        (oTile) => {
+          if (this.ocean.includes(fromCube(oTile))) return true;
+          return false;
+        }
+      ).length;
+      //chance += 0.1 * nearByOcean;
+      spread += 0.2 * nearByOcean;
+      if (spread > chance && !this.lifted.includes(fromCube(tile))) {
         spread -= 0.33;
         if (spread > 1) spread = 1;
-        this.spreadBeach(x2, y2, spread, type);
+        this.spreadBeach(tile, spread, type);
       } else {
       }
     }
   }
-  spreadTree(x: number, y: number, spread: number, direction: number) {
-    if (x == 0 || y == 0 || x == this.diameter - 1 || y == this.diameter - 1)
-      return;
-    if (this.array[x][y].type !== "plain") return;
-    this.array[x][y] = new TerrainForest(this.array[x][y].elevation, x, y);
-    this.lifted.push(`${x},${y}`);
-    for (let i in getNearby(x, y)) {
-      const [x2, y2] = getNearby(x, y)[i];
+  spreadTree(cood: Cube, spread: number, direction: number) {
+    if (this.tiles[fromCube(cood)].type !== "plain") return;
+    let group = this.tiles[fromCube(cood)].groupID;
+    this.tiles[fromCube(cood)] = new TerrainForest(
+      this.tiles[fromCube(cood)].elevation,
+      cood.q,
+      cood.s,
+      cood.r
+    );
+    this.tiles[fromCube(cood)].groupID = group;
+    this.lifted.push(fromCube(cood));
+    const tiles = this.getRing(cood.q, cood.s, cood.r, 1);
+    for (let i in tiles) {
+      const tile = tiles[i];
       let chance = Math.random();
       if (parseInt(i) == direction) chance += 0.2;
-      if (
-        spread > chance &&
-        !this.lifted.includes(`${x2},${y2}`) &&
-        this.array?.[x2]?.[y2]
-      ) {
-        spread *= Math.random() * 0.5 + 0.72;
+      if (spread > chance && !this.lifted.includes(fromCube(tile))) {
+        spread *= Math.random() * 0.5 + 0.7;
         if (spread > 1) spread = 1;
-        this.spreadTree(x2, y2, spread, parseInt(i));
+        this.spreadTree(tile, spread, parseInt(i));
       } else {
       }
     }
   }
 
-  getRandomLandPoint(char?: Char): [number, number] {
-    let [x, y] = [1, 1];
+  getRandomLandPoint(char?: Char): Cube {
+    let q = 0;
+    let s = 0;
+    let r = 0;
     if (char) {
-      let tiles = this.islands[this.array?.[char.x()]?.[char.y()]?.groupID];
+      /*let tiles = this.islands[this.array?.[char.x()]?.[char.y()]?.groupID];
       if (tiles !== undefined) {
         let options: Array<[any, number]> = [["leave", 20]];
         for (let xy of tiles) {
@@ -750,58 +693,70 @@ export class Terrain {
         if (res !== "leave") {
           return res.split(",") as [number, number];
         }
-      }
+      }*/
 
-      let cX = game.map.centerX;
-      let cY = game.map.centerY;
-      let d = hypD(char.x() - cX, char.y() - cY);
-      let land = game.map.land.map((i) => i[0] + "," + i[1]);
-      let i = Math.min(Math.ceil(d), 4);
+      let d = this.getDistance(char.coord, this.center);
+      let land = game.map.land.map((i) => fromCube(i));
+
       let found = false;
+      let i = roll_range(
+        Math.min(Math.ceil(d), 4),
+        Math.min(Math.ceil(d), 4) + 4
+      );
       do {
-        let tiles = game.map.getRing(char.x(), char.y(), i);
+        let tiles = game.map.getRing(
+          char.coord.q,
+          char.coord.s,
+          char.coord.r,
+          i
+        );
         tiles.sort((a, b) => {
-          return hypD(a[0] - cX, a[1] - cY) - hypD(b[0] - cX, b[1] - cY);
+          return (
+            this.getDistance(a, this.center) - this.getDistance(b, this.center)
+          );
         });
         for (let tile of tiles) {
-          if (land.includes(tile.join(","))) {
+          if (land.includes(fromCube(tile))) {
             found = true;
-            [x, y] = tile;
+            //console.log(tile.elevation);
+            q = tile.q;
+            s = tile.s;
+            r = tile.r;
           }
         }
         i++;
-      } while (i <= d && !found);
-      return [x, y];
+      } while (!found);
+      return { q, s, r };
     } else {
-      let x = this.centerX;
-      let y = this.centerY;
       let attempts = 0;
       let islandSize = 0;
-      let [newX, newY] = [x, y];
+      let cood = this.center;
       do {
-        [newX, newY] = this.land.sort(() => Math.random() - 0.5)[0];
-        islandSize = this.islands[this.array[newX][newY].groupID]?.length ?? 0;
+        let tile = this.land.sort(() => Math.random() - 0.5)[0];
+        cood = {
+          q: tile.q,
+          r: tile.r,
+          s: tile.s,
+        };
+        islandSize =
+          this.islands[this.tiles[fromCube(cood)].groupID]?.length ?? 0;
         attempts++;
       } while (
         islandSize < 50 &&
         attempts < 10 &&
-        hypD(newX - x, newY - newY) <= (game?.radius ?? this.diameter)
+        this.getDistance(cood, this.center) <= (game?.radius ?? this.diameter)
       );
-      if (islandSize > 50) [x, y] = [newX, newY];
-      return [x, y];
+      if (islandSize > 50) return cood;
+      return this.center;
     }
   }
-  countWaterTilesInPath(x1: number, y1: number, x2: number, y2: number) {
-    return this.getTilesBetween(x1, y1, x2, y2).filter((x) => x.type == "water")
-      .length;
-  }
-  canSee(x1: number, y1: number, x2: number, y2: number) {
-    let elevation = this.array[x1][y1].elevation;
-    let targetElevation = this.array[x2][y2].elevation;
+  canSee(from: TerrainType, to: TerrainType) {
+    let elevation = this.tiles[fromCube(from)].elevation;
+    let targetElevation = this.tiles[fromCube(to)].elevation;
     if (elevation < 0) elevation = -1;
     if (targetElevation < 0) targetElevation = -1;
-    let tiles = this.getTilesBetween(x1, y1, x2, y2);
-    let d = hypD(x1 - x2, y1 - y2);
+    let tiles = this.getTilesBetween(from, to);
+    let d = this.getDistance(from, to);
     if (elevation >= targetElevation) {
       elevation += 1;
       let filteredTiles = tiles.filter((x, i) => {
@@ -827,51 +782,80 @@ export class Terrain {
       return false;
     }
   }
-  getTime(tiles: TerrainType[]) {
-    let arr = tiles.map((i) => {
-      return {
-        speed: (i.icon == "🔥" ? 5 : 1) / Math.pow(i.moveSpeedB, 2),
-        x: i.x,
-        y: i.y,
-      };
-    });
-    for (let i = 1; i <= arr.length - 1; i++) {
-      let d = hypD(arr[i].x - arr[i - 1].x, arr[i].y - arr[i - 1].y);
-      arr[i - 1].speed *= d;
+
+  getMovementCost(tiles: TerrainType[]) {
+    let t = [...tiles];
+    let c = 0;
+    for (let i = 1; i <= t.length - 1; i++) {
+      c += t[i - 1].moveCost + Math.abs(t[i].elevation - t[i - 1].elevation);
+      //if (t[i].moveCost > 6) t[i].moveCost = 999;
     }
-    return arr.map((x) => x.speed).reduce((a, b) => a + b, 0);
+    return c;
+    t.splice(0, 1);
+    return t.map((x) => x.moveCost).reduce((a, b) => a + b, 0);
   }
-  getTilesBetween(x1: number, y1: number, x2: number, y2: number) {
-    let xDiff = x2 - x1;
-    let yDiff = y2 - y1;
-    let d = Math.ceil(hypD(xDiff, yDiff));
-    let added: Set<string> = new Set();
+  getDistance(
+    from: { q: number; s: number; r: number },
+    to: { q: number; s: number; r: number }
+  ) {
+    return (
+      (Math.abs(from.q - to.q) +
+        Math.abs(from.s - to.s) +
+        Math.abs(from.r - to.r)) /
+      2
+    );
+  }
+  getTilesBetween(
+    from: { q: number; s: number; r: number },
+    to: { q: number; s: number; r: number }
+  ) {
+    let qDiff = from.q - to.q;
+    let sDiff = from.s - to.s;
+    let rDiff = from.r - to.r;
     let tiles: Array<TerrainType> = [];
-    for (let i = 1; i <= d; i += 0.5) {
-      let x = Math.round(x1 + (xDiff * i) / d);
-      let y = Math.round(y1 + (yDiff * i) / d);
-      let xy = `${x},${y}`;
-      if (!added.has(xy)) {
-        added.add(xy);
-        tiles.push(this.array[x][y]);
-      }
+    let d = this.getDistance(from, to);
+    for (let i = 1; i <= d; i += 0.1) {
+      let q = Math.round(from.q - (qDiff * i) / d);
+      let s = Math.round(from.s - (sDiff * i) / d);
+      let r = -q - s;
+      let tile = this.addTile(q, s, r);
+      if (!tiles.includes(tile)) tiles.push(tile);
     }
     return tiles;
   }
-  getRing(x: number, y: number, d: number) {
-    let arr: Array<[number, number]> = [];
-    for (let i = x - d; i <= x + d; i++) {
-      if (this.array?.[i]?.[y + d]) arr.push([i, y + d]);
+  getRing(
+    q: number,
+    s: number,
+    r: number,
+    distance: number,
+    ignoreLimit = false
+  ): TerrainType[] {
+    let arr: TerrainType[] = [];
+    for (let d of [distance, distance * -1]) {
+      for (let i = 0; Math.abs(i) <= Math.abs(d); i += d / Math.abs(d)) {
+        let tile = this.addTile(q + d, s - i, r + i - d);
+        if (!arr.includes(tile)) arr.push(tile);
+        tile = this.addTile(q + d - i, s + i, r - d);
+        if (!arr.includes(tile)) arr.push(tile);
+        tile = this.addTile(q - i, s + d, r - d + i);
+        if (!arr.includes(tile)) arr.push(tile);
+      }
     }
-    for (let i = y + d - 1; i > y - d; i--) {
-      if (this.array?.[x + d]?.[i]) arr.push([x + d, i]);
-    }
-    for (let i = x - d; i <= x + d; i++) {
-      if (this.array?.[i]?.[y - d]) arr.push([i, y - d]);
-    }
-    for (let i = y + d - 1; i > y - d; i--) {
-      if (this.array?.[x - d]?.[i]) arr.push([x - d, i]);
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (
+        Math.abs(arr[i].q) > this.diameter ||
+        Math.abs(arr[i].s) > this.diameter * 1.2 ||
+        Math.abs(arr[i].r) > this.diameter * 1.2
+      ) {
+        delete this.tiles[fromCube(arr[i])];
+        arr.splice(i, 1);
+      }
     }
     return arr;
+  }
+  addTile(q: number, s: number, r: number) {
+    if (this.tiles[fromCube({ q, s, r })] == undefined)
+      this.tiles[fromCube({ q, s, r })] = new TerrainWater(-3, q, s, r);
+    return this.tiles[fromCube({ q, s, r })];
   }
 }

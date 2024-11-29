@@ -1,8 +1,13 @@
 <script lang="ts">
-	import { type Char } from '$lib/classes';
+	import { game, view, type Char } from '$lib/classes';
 	import Icon from './Icon.svelte';
 	export let char: Char;
 	export let selectChar: Function;
+	function getX() {
+		let u = $view.renderSize / ($game.diameter * 3.5);
+		let x = ((3 * char.coord.q) / 2 + ($game.diameter * 3) / 2) / ($game.diameter * 3);
+		return x;
+	}
 </script>
 
 <div
@@ -54,6 +59,11 @@
 		</tr>
 		<tr>
 			<td><i>{isNaN(parseInt(char.group)) ? char.group : 'Solo'}</i></td>
+		</tr>
+		<tr>
+			<td>
+				{#key char}{getX()}{/key}
+			</td>
 		</tr>
 		{#if char.equip.weapon?.name}
 			<tr>

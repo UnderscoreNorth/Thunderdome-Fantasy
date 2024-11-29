@@ -23,6 +23,7 @@
 	import MdSort from 'svelte-icons/md/MdSort.svelte';
 	import GiPocketBow from 'svelte-icons/gi/GiPocketBow.svelte';
 	import GiArrowhead from 'svelte-icons/gi/GiArrowhead.svelte';
+	import MdPerson from 'svelte-icons/md/MdPerson.svelte';
 	export let icon: string;
 </script>
 
@@ -92,6 +93,8 @@ L101.029,238.26z"
 	<GiPocketBow />
 {:else if icon == 'spear'}
 	<GiArrowhead />
+{:else if icon == 'person'}
+	<MdPerson />
 {/if}
 
 <style>

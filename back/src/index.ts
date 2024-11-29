@@ -33,6 +33,10 @@ app.listen(port, () => {
 app.use("/auth", async (req, res, next) => {
   res.send({ auth: req.body.pass == config.pass });
 });
+app.use("/turn", async (req, res, next) => {
+  turn();
+  res.send(retrieveJson(req.query.id as string));
+});
 app.use("/newGame", async (req, res, next) => {
   if (req.body.pass !== config.pass) {
     res.send({});

@@ -8,8 +8,8 @@ import {
   writeFileSync,
 } from "fs";
 import { Char } from "./entities/char";
-import { Terrain, TerrainType, TerrainUnseen } from "./terrain";
-import { getTerrain, hypD, shuffle } from "./utils";
+import { Terrain, TerrainType } from "./terrain";
+import { fromCube, shuffle } from "./utils";
 import path from "path";
 export const newGameData: {
   diameter: number;
@@ -85,22 +85,23 @@ export function generateGame() {
     `./games/${game.name}/map.json`,
     JSON.stringify({
       name: game.name,
-      map: game.map.array,
+      map: game.map.tiles,
       islands: game.map.islands,
-      center: { x: game.map.centerX, y: game.map.centerY },
+      center: game.map.center,
       diameter: game.diameter,
     })
   );
   for (let char of newGameData.chars) {
     if (typeof char !== "object") continue;
-    let [x, y] = game.map.getRandomLandPoint();
+    let cood = game.map.getRandomLandPoint();
     game.chars.push(
       new Char(
         char.name,
         char.group.length ? char.group : game.chars.length.toString(),
         char.img,
-        x,
-        y,
+        cood.q,
+        cood.s,
+        cood.r,
         "Neutral",
         "Neutral",
         game.chars.length
@@ -166,14 +167,13 @@ export function turn() {
     2,
     Math.pow((game.timeLength - game.elapsedTime) / game.timeLength, 0.75) *
       game.diameter *
-      0.8
+      2
   );
   for (let i = game.map.land.length - 1; i >= 0; i--) {
-    let x = game.map.land[i][0];
-    let y = game.map.land[i][1];
-    if (hypD(game.map.centerX - x, game.map.centerY - y) > game.radius) {
+    let tile = game.map.tiles[fromCube(game.map.land[i])];
+    if (game.map.getDistance(game.map.center, tile) > game.radius) {
       game.map.land.splice(i, 1);
-      game.toBurn.push(getTerrain(x, y));
+      game.toBurn.push(tile);
     }
   }
   for (let i = game.toBurn.length - 1; i >= 0; i--) {
@@ -181,7 +181,7 @@ export function turn() {
       game.toBurn[i].icon = "🔥";
       game.toBurn[i].value = 0;
       game.toBurn[i].glow = false;
-      game.burned.push(`${game.toBurn[i].x},${game.toBurn[i].y}`);
+      game.burned.push(fromCube(game.toBurn[i]));
       game.toBurn.splice(i, 1);
     }
   }
@@ -235,14 +235,13 @@ export function toJson() {
           img: x.img,
           stats: x.stats,
           situation: {
-            x: x.situation.x,
-            y: x.situation.y,
             seen: Array.from(x.situation.seen),
             been: Array.from(x.situation.been),
             vision: Array.from(x.situation.vision),
             inRangeOf: x.situation.inRangeOf.map((i) => i.name),
             awareOf: x.situation.awareOf.map((i) => i.name),
           },
+          coord: x.coord,
           equip: {
             weapon: x.equip?.weapon
               ? Object.assign(x.equip.weapon, {

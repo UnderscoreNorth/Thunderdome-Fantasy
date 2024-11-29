@@ -1,13 +1,7 @@
 import { game } from "../game";
 import { Action, ActionArg } from "../mechanics/actions";
 import { planAction } from "../mechanics/planAction";
-import {
-  getD,
-  getNearByDiag,
-  getTerrain,
-  roll,
-  updatePlayerDistTable,
-} from "../utils";
+import { fromCube } from "../utils";
 import { Armor } from "./armor";
 import { Weapon } from "./weapon";
 
@@ -34,8 +28,6 @@ export class Char {
     combatRange: number;
   };
   situation: {
-    x: number;
-    y: number;
     visibility: number;
     awareOf: Char[];
     inRangeOf: Char[];
@@ -44,6 +36,7 @@ export class Char {
     been: string[];
     dir: number;
     lastSlept: number;
+    movePoints: number;
   };
   social: {
     moral: "Chaotic" | "Neutral" | "Lawful";
@@ -58,6 +51,11 @@ export class Char {
     weapon?: Weapon;
     armor?: Armor;
   };
+  coord: {
+    q: number;
+    s: number;
+    r: number;
+  };
   plannedAction?: Action;
   currentAction?: Action;
   lastAction?: Action;
@@ -67,8 +65,9 @@ export class Char {
     name: string,
     group: string,
     img: string,
-    x: number,
-    y: number,
+    q: number,
+    s: number,
+    r: number,
     moral: "Chaotic" | "Neutral" | "Lawful",
     personality: "Good" | "Neutral" | "Evil",
     id: number
@@ -100,8 +99,6 @@ export class Char {
       this.stats.intimidation += 20;
     }
     this.situation = {
-      x,
-      y,
       awareOf: [],
       inRangeOf: [],
       visibility: 100,
@@ -110,6 +107,7 @@ export class Char {
       been: [],
       dir: Math.random() * 360,
       lastSlept: 0,
+      movePoints: 0,
     };
     this.social = {
       moral,
@@ -117,10 +115,11 @@ export class Char {
       peaceB: 50,
       aggroB: 50,
     };
+    this.coord = { q, s, r };
     this.equip = {};
     this.death = "";
     this.dead = false;
-    this.visionCheck(this.x(), this.y());
+    this.visionCheck();
   }
   //other players
 
@@ -131,6 +130,13 @@ export class Char {
   inRangeOfPlayer(oP: Char) {
     if (this.situation.inRangeOf.indexOf(oP) >= 0) return true;
     return false;
+  }
+  been() {
+    if (this.situation.been.length) {
+      let lastBeen = this.situation.been[this.situation.been.length - 1];
+      if (lastBeen == fromCube(this.coord)) return;
+    }
+    this.situation.been.push(fromCube(this.coord));
   }
   //get all the players within a certain distance
   nearbyPlayers(dist: number) {
@@ -154,9 +160,10 @@ export class Char {
   }
   turnStart() {
     if (this.dead) return;
-    if (getTerrain(this.x(), this.y())) {
+    this.situation.movePoints = 2;
+    if (game.map.tiles[fromCube(this.coord)]) {
       this.situation.vision = new Set();
-      this.visionCheck(this.x(), this.y());
+      this.visionCheck();
     }
     this.lastAction = this?.currentAction;
     if (this.currentAction && this.currentAction.complete) {
@@ -211,40 +218,40 @@ export class Char {
   turnEnd() {
     if (this.dead) return;
     this.situation.lastSlept++;
-    if (getTerrain(this.x(), this.y())) {
+    if (game.map.tiles[fromCube(this.coord)]) {
       this.situation.vision = new Set();
-      this.visionCheck(this.x(), this.y());
+      this.visionCheck();
     }
-    this.situation.been.push(
-      `${Math.round(this.situation.x * 10) / 10},${
-        Math.round(this.situation.y * 10) / 10
-      }`
-    );
-    getTerrain(this.x(), this.y())?.terrainCheck(this);
+    this.been();
+    game.map.tiles[fromCube(this.coord)]?.terrainCheck(this);
     this.limitCheck();
     if (this.currentAction) this.currentAction.postPerform();
   }
-  x() {
-    return Math.round(this.situation.x);
-  }
-  y() {
-    return Math.round(this.situation.y);
-  }
-  visionCheck(x: number, y: number) {
+  visionCheck() {
     let seen = false;
     let d = 0;
     this.situation.awareOf = [];
     this.situation.inRangeOf = [];
     do {
       seen = false;
-      for (const [x2, y2] of game.map.getRing(x, y, d)) {
-        if (game.map.canSee(x, y, x2, y2)) {
+      for (const tile of game.map.getRing(
+        this.coord.q,
+        this.coord.s,
+        this.coord.r,
+        d
+      )) {
+        if (game.map.canSee(game.map.tiles[fromCube(this.coord)], tile)) {
           for (const char of game.chars.filter((i) => !i.dead)) {
-            if (char !== this && char.x() == x2 && char.y() == y2) {
+            if (
+              char !== this &&
+              char.coord.q == tile.q &&
+              char.coord.s == tile.s &&
+              char.coord.r == tile.r
+            ) {
               if (this.group !== char.group) {
                 this.situation.awareOf.push(char);
                 if (
-                  getD(this, char) <=
+                  game.map.getDistance(this.coord, char.coord) <=
                   this.stats.combatRange +
                     (this.equip?.weapon?.uses
                       ? this.equip?.weapon?.rangeBonus ?? 0
@@ -255,9 +262,8 @@ export class Char {
               }
             }
           }
-          let xy = `${x2},${y2}`;
-          this.situation.vision.add(xy);
-          this.situation.seen.add(xy);
+          this.situation.vision.add(fromCube(tile));
+          this.situation.seen.add(fromCube(tile));
           seen = true;
         }
       }
@@ -273,7 +279,7 @@ export class Char {
     ]);
   }
 
-  explore() {
+  /* explore() {
     let priorities: Array<[string, number]> = [];
     let nearby = getNearByDiag(this.x(), this.y());
     let dir = Math.floor(this.situation.dir / 45);
@@ -318,11 +324,10 @@ export class Char {
       .map((x) => parseInt(x)) as [number, number];
     return res;
   }
+    */
   //move to given coords
-  moveToCoords(targetX: number, targetY: number) {
-    this.situation.x = targetX;
-    this.situation.y = targetY;
-    updatePlayerDistTable();
+  moveToCoords(q: number, s: number, r: number) {
+    this.coord = { q, s, r };
   }
 
   //check if player is supposed to die
@@ -331,7 +336,7 @@ export class Char {
       this.die("glitched to death");
       return;
     }
-    if (isNaN(this.situation.x) || isNaN(this.situation.y)) {
+    if (Object.values(this.coord).reduce((a, b) => a + b, 0) !== 0) {
       this.die("glitched out of reality");
       return;
     }

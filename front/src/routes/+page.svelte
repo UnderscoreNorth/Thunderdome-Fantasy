@@ -2,7 +2,13 @@
 	import { api } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import './styles.css';
-	import { selectedCharID, type Char, type Game, type TerrainType } from '$lib/classes';
+	import {
+		selectedCharID,
+		selectedIsland,
+		type Char,
+		type Game,
+		type TerrainType
+	} from '$lib/classes';
 	import CharDetailed from '$lib/CharDetailed.svelte';
 	import CharBox from '$lib/CharBox.svelte';
 	import Icon from '$lib/Icon.svelte';
@@ -73,16 +79,18 @@
 						r.time.day !== $game?.time?.day
 					)
 						game.update((g) => {
+							if (g?.name !== r?.name) {
+								$selectedCharID = undefined;
+								$selectedIsland = undefined;
+							}
 							if (g == undefined) {
 								g = r;
 							} else {
 								g = Object.assign(g, r);
 							}
 							g.chars = sortChars(g.chars);
-							for (const xy of g.burned) {
-								let [x, y] = xy.split(',').map((i) => parseInt(i)) as [number, number];
-								g.map[x][y].icon = '🔥';
-								g.map[x][y].glow = false;
+							for (const qsr of g.burned) {
+								g.map[qsr].icon = '🔥';
 							}
 							return g;
 						});
@@ -103,7 +111,7 @@
 
 <svelte:head></svelte:head>
 <app>
-	<Canvas {unit} />
+	<Canvas />
 	<MapOverlay {unit} {selectChar} />
 	<div id="sidePanel">
 		{#if !$game}
