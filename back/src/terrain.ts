@@ -720,7 +720,7 @@ export class Terrain {
           }
         }
         i++;
-      } while (!found);
+      } while (!found && i < this.diameter);
       return { q, s, r };
     } else {
       let attempts = 0;
@@ -782,7 +782,9 @@ export class Terrain {
     let t = [...tiles];
     let c = 0;
     for (let i = 1; i <= t.length - 1; i++) {
-      c += t[i - 1].moveCost + Math.abs(t[i].elevation - t[i - 1].elevation);
+      c +=
+        t[i - 1].moveCost +
+        Math.pow(Math.abs(t[i].elevation - t[i - 1].elevation), 2);
       //if (t[i].moveCost > 6) t[i].moveCost = 999;
     }
     return c;
@@ -837,11 +839,7 @@ export class Terrain {
       }
     }
     for (let i = arr.length - 1; i >= 0; i--) {
-      if (
-        Math.abs(arr[i].q) > this.diameter ||
-        Math.abs(arr[i].s) > this.diameter * 1.2 ||
-        Math.abs(arr[i].r) > this.diameter * 1.2
-      ) {
+      if (this.getDistance({ q: 0, r: 0, s: 0 }, arr[i]) > this.diameter) {
         delete this.tiles[fromCube(arr[i])];
         arr.splice(i, 1);
       }
